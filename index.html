@@ -1402,11 +1402,12 @@ function recalc() {
     ? INSCRIPCION * [...selIds].filter(id => debeInscripcion(id)).length
     : 0;
 
-  let grandTotal = inscTotalFinal;
+  let grandTotal = 0;
   let lines = '';
 
   // Solo inscripción — sin cuotas todavía
   if (soloInscripcion && mesesArr.length === 0) {
+    grandTotal = inscTotalFinal;
     lines += `
       <div class="total-line" style="margin-bottom:3px">
         <span class="tl-label" style="font-weight:700;color:var(--pink-dark)">Inscripción</span>
@@ -1448,7 +1449,7 @@ function recalc() {
     const jugsQueDeben = [...selIds].filter(id => getMesesDeuda(id).includes(mes));
     const countMes = jugsQueDeben.length;
     if (countMes === 0) return; // nadie debe este mes
-    const mesTotal = calcMesTotal(mes, tipoAuto, countMes, recargo);
+    const mesTotal = calcMesTotal(mes, tipoAuto, countMes, 0); // recargo se suma por separado
     grandTotal += mesTotal;
 
     if (idx > 0) lines += `<div class="tl-sep" style="margin:6px 0 4px"></div>`;
@@ -1479,10 +1480,27 @@ function recalc() {
 
     if (hayRec) lines += `
       <div class="total-line">
-        <span class="tl-recargo-label">Recargo${count > 1 ? ' × '+count : ''}</span>
-        <span class="tl-recargo-val">+$${(recargo*count).toLocaleString('es-AR')}</span>
+        <span class="tl-recargo-label">Recargo${countMes > 1 ? ' × '+countMes : ''}</span>
+        <span class="tl-recargo-val">+$${(recargo*countMes).toLocaleString('es-AR')}</span>
       </div>`;
+    grandTotal += recargo * countMes;
   });
+
+  // Inscripción de integrantes que la deben (caso grupo mixto)
+  if (hayInscPendiente && !soloInscripcion) {
+    const nInscr = [...selIds].filter(id => debeInscripcion(id)).length;
+    lines += `
+      <div class="tl-sep" style="margin:6px 0 4px"></div>
+      <div class="total-line" style="margin-bottom:3px">
+        <span class="tl-label" style="font-weight:700;color:var(--pink-dark)">Inscripción</span>
+        <span class="tl-val" style="color:var(--text-soft);font-size:11px">$${inscTotalFinal.toLocaleString('es-AR')}</span>
+      </div>
+      <div class="total-line">
+        <span class="tl-label">$${INSCRIPCION.toLocaleString('es-AR')}${nInscr > 1 ? ' × '+nInscr : ''}</span>
+        <span class="tl-val">$${inscTotalFinal.toLocaleString('es-AR')}</span>
+      </div>`;
+    grandTotal += inscTotalFinal;
+  }
 
   document.getElementById('totalAmt').textContent = '$' + grandTotal.toLocaleString('es-AR');
   document.getElementById('totalLines').innerHTML = lines;
