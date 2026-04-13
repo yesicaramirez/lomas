@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Lomas Hockey Club — Pagos</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -24,6 +24,10 @@
     --shadow-md:  0 4px 24px rgba(160,80,110,0.13);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    overflow-x: hidden;
+    width: 100%;
+  }
   body {
     font-family: 'Inter', sans-serif;
     background: var(--bg); color: var(--text);
@@ -508,10 +512,19 @@
         <div class="card-heading"><div class="card-heading-dot"></div>DNI</div>
         <div class="search-row">
           <input class="input-field search-input" id="dniInput" type="text" placeholder="DNI"
-            maxlength="12" onkeydown="if(event.key==='Enter')buscar()">
+            maxlength="12" onkeydown="if(event.key==='Enter')buscar()" oninput="formatearDNIInput(this)">
           <button class="btn-search" onclick="buscar()">Buscar</button>
         </div>
         <div class="error-msg" id="dniError">No encontramos ese DNI. Consultá al club.</div>
+      </div>
+
+      <!-- Mensaje exento -->
+      <div id="exentoMsg" style="display:none">
+        <div class="card" style="text-align:center;padding:28px 20px">
+          <div style="font-size:36px;margin-bottom:12px">🏑</div>
+          <div style="font-family:'Playfair Display',serif;font-size:17px;font-weight:700;color:var(--black);margin-bottom:8px" id="exentoNombre"></div>
+          <div style="font-size:13px;color:var(--text-soft);line-height:1.6">No corresponde realizar pagos de cuota para este integrante.<br>Ante cualquier consulta, comunicarse con el club.</div>
+        </div>
       </div>
 
       <div id="grupoSection" style="display:none">
@@ -1059,9 +1072,19 @@ function irDespues() {
   document.getElementById('pagos-dni-card').style.display = '';
 }
 
+function formatearDNIInput(el) {
+  // Guardar posición del cursor
+  const digits = el.value.replace(/\D/g, '').slice(0, 8);
+  // Formatear con puntos: XX.XXX.XXX
+  let formatted = '';
+  if (digits.length <= 2) formatted = digits;
+  else if (digits.length <= 5) formatted = digits.slice(0,2) + '.' + digits.slice(2);
+  else formatted = digits.slice(0,2) + '.' + digits.slice(2,5) + '.' + digits.slice(5);
+  el.value = formatted;
+}
+
 function normalizarDNI(raw) {
-  // Quitar puntos, espacios, guiones -> solo dígitos
-  return raw.replace(/[\.\s\-]/g, '');
+  return raw.replace(/\D/g, '');
 }
 
 function buscar() {
@@ -1086,6 +1109,19 @@ function buscar() {
     document.getElementById('grupoSection').style.display = 'none';
     return;
   }
+
+  // Verificar si es exento
+  const jugadoraExenta = JUGADORAS.find(j => j.dni === q && j.exento);
+  if (jugadoraExenta) {
+    document.getElementById('dniInput').classList.remove('error');
+    document.getElementById('grupoSection').style.display = 'none';
+    err.style.display = 'none';
+    // Mostrar mensaje de exento
+    document.getElementById('exentoMsg').style.display = 'block';
+    document.getElementById('exentoNombre').textContent = jugadoraExenta.nombre;
+    return;
+  }
+  document.getElementById('exentoMsg').style.display = 'none';
 
   // Normalizar lo que queda en el input
   document.getElementById('dniInput').value = q;
@@ -1516,6 +1552,7 @@ function reset() {
   document.getElementById('dniInput').value = '';
   document.getElementById('dniInput').classList.remove('error');
   document.getElementById('dniError').style.display    = 'none';
+  document.getElementById('exentoMsg').style.display   = 'none';
   document.getElementById('pagos-header').style.display = '';
   document.getElementById('pagos-dni-card').style.display = '';
   document.getElementById('grupoSection').style.display = 'none';
