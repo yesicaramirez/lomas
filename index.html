@@ -1229,7 +1229,6 @@ function buscar() {
     // Verificar si debe inscripción aunque no tenga cuotas pendientes
     const debeInscr = grupo.some(p => soloDebeInscripcion(p.id));
     if (debeInscr) {
-      // Mostrar sección de pago solo con inscripción
       document.getElementById('payOpts').style.display = 'block';
       document.getElementById('recargoNote').style.display = 'none';
       recalc();
@@ -1351,17 +1350,18 @@ function recalc() {
   document.getElementById('payOpts').style.display = count > 0 ? 'block' : 'none';
   document.getElementById('recargoNote').style.display = hayRec ? 'flex' : 'none';
 
-  if (count === 0 || mesesArr.length === 0) {
+  // ¿Algún integrante solo debe inscripción? (se inscribió tarde, sin cuotas aún)
+  const soloInscripcion = [...selIds].some(id => soloDebeInscripcion(id));
+
+  if (count === 0 || (mesesArr.length === 0 && !soloInscripcion)) {
     document.getElementById('totalBox').style.display = 'none';
     document.getElementById('stickyBar').style.display = 'none';
     document.getElementById('btnPagar').disabled = true;
     return;
   }
 
-  const recargo = hayRec ? RECARGO : 0;
+  const recargo = hayRec && !soloInscripcion ? RECARGO : 0;
 
-  // ¿Algún integrante solo debe inscripción? (se inscribió tarde, sin cuotas aún)
-  const soloInscripcion = [...selIds].some(id => soloDebeInscripcion(id));
   // ¿Algún integrante debe inscripción + cuota?
   const primerPago = [...selIds].some(id => esPrimerPago(id));
   // ¿Algún integrante debe inscripción pendiente (tardía, ahora paga cuota)?
