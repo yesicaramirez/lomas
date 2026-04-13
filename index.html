@@ -1351,11 +1351,11 @@ function recalc() {
   const hayRec   = tieneRecargo();
   const mesesArr = [...mesesSel].sort((a,b) => a-b);
 
-  document.getElementById('payOpts').style.display = count > 0 ? 'block' : 'none';
-  document.getElementById('recargoNote').style.display = (hayRec && !soloInscripcion) ? 'flex' : 'none';
-
   // ¿Algún integrante solo debe inscripción? (se inscribió tarde, sin cuotas aún)
   const soloInscripcion = [...selIds].some(id => soloDebeInscripcion(id));
+
+  document.getElementById('payOpts').style.display = count > 0 ? 'block' : 'none';
+  document.getElementById('recargoNote').style.display = (hayRec && !soloInscripcion) ? 'flex' : 'none';
 
   if (count === 0 || (mesesArr.length === 0 && !soloInscripcion)) {
     document.getElementById('totalBox').style.display = 'none';
