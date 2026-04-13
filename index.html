@@ -783,7 +783,7 @@
         <div style="font-family:'Playfair Display',serif;font-size:15px;font-weight:700;color:var(--black)">Liquidaciones mensuales</div>
         <div style="font-size:12px;color:var(--text-soft);margin-top:2px">Sueldo de profes · Comisiones · Fondo del club</div>
       </div>
-      <button onclick="cerrarMesManual()" style="padding:8px 16px;background:var(--black);color:white;border:none;border-radius:8px;font-family:'Inter',sans-serif;font-size:12px;font-weight:600;cursor:pointer">
+      <button onclick="cerrarMesManual(this)" style="padding:8px 16px;background:var(--black);color:white;border:none;border-radius:8px;font-family:'Inter',sans-serif;font-size:12px;font-weight:600;cursor:pointer">
         + Cerrar mes manualmente
       </button>
     </div>
@@ -2105,6 +2105,8 @@ async function cerrarMesManual() {
     alert('Error al cerrar el mes. Intentá de nuevo.');
   }
 }
+
+function renderCrecimiento() {
   // Construir mapa mes -> { altas, bajas }
   const meses = {};
   JUGADORAS.forEach(j => {
