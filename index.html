@@ -1397,7 +1397,8 @@ function recalc() {
   document.getElementById('btnPagar').disabled = false;
 }
 
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzFkCWi42NCtruksATIhtB9ZHxj8eu85PwPuQs8mbsOCfV8kAwf4z7rjdvqlRGYTnkS_A/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwnOS88qVWZmFuHoLthxRGzZrgdICJ-idbYYtb6flt0ga8u2ecykoaRLkNfAoqpQmOoFQ/exec';
+const MP_PUBLIC_KEY   = 'APP_USR-031a6920-8add-451f-b314-43cfa6eb92d0';
 
 // Muestra/oculta pantalla de carga
 function setLoading(visible) {
@@ -2017,7 +2018,8 @@ function renderLiquidaciones() {
     const sueldo    = parseInt(l['Sueldo_Profe'])|| 0;
     const inscr     = parseInt(l['Inscripciones'])|| 0;
     const recargos  = parseInt(l['Recargos'])    || 0;
-    const fondoClub = inscr + recargos;
+    const impagas   = parseInt(l['Impagas'])     || 0;
+    const fondoClub = inscr + recargos + impagas;
 
     return `
     <div style="background:var(--white);border:1px solid var(--border);border-radius:14px;margin-bottom:14px;overflow:hidden;box-shadow:var(--shadow)">
@@ -2068,9 +2070,13 @@ function renderLiquidaciones() {
             <span>Inscripciones</span>
             <span style="font-weight:600">$${inscr.toLocaleString('es-AR')}</span>
           </div>
-          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px">
-            <span>Recargos</span>
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
+            <span>Recargos cobrados</span>
             <span style="font-weight:600">$${recargos.toLocaleString('es-AR')}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px">
+            <span style="color:var(--text-soft)">Cuotas impagas al cierre</span>
+            <span style="font-weight:600;color:var(--text-soft)">$${impagas.toLocaleString('es-AR')}</span>
           </div>
           <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;border-top:1px solid var(--pink-light);padding-top:8px">
             <span>Total fondo club</span>
