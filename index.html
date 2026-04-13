@@ -1366,7 +1366,7 @@ function recalc() {
   document.getElementById('btnPagar').disabled = false;
 }
 
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwu-0Ra5-c_hMsbzOZLpAFcjT1PE2bEpnqPOBq10usBBVETj1Uqe6FRjaJsq0q0wEQwGQ/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxgw2XC3qv-OxLtH7DliEPqwJVxEuw-71Cii-aYpxWAYtFJnbrAfCNShXiYeU3h0Wxiig/exec';
 const MP_PUBLIC_KEY   = 'APP_USR-031a6920-8add-451f-b314-43cfa6eb92d0';
 
 // Muestra/oculta pantalla de carga
@@ -1383,8 +1383,8 @@ async function cargarDatos() {
     if (data.error) throw new Error(data.error);
 
     const { jugadores, pagos, grupos } = data;
-    window._pagosSheet = pagos;
-    if (pagos.length > 0) console.log('Sheet Pagos keys:', Object.keys(pagos[0]), '| Anio value:', pagos[0]['Anio'], '| All values:', JSON.stringify(pagos[0]));
+    window._pagosSheet  = pagos;
+    window._gruposSheet = grupos;
 
     // Helper para obtener el año de un pago
     function getPagoAnio(p) {
@@ -1745,15 +1745,55 @@ function abrirBaja(dni, nombre) {
   document.getElementById('modalBaja').style.display = 'flex';
 }
 
-function confirmarBaja() {
+async function confirmarBaja() {
   const j = JUGADORAS.find(x => x.dni === _accionDni);
   if (!j) return;
-  const hoy = new Date().toISOString().split('T')[0];
-  j.estado    = 'baja';
-  j.fechaBaja = hoy;
-  cerrarModal('modalBaja');
-  renderIntegrantesTable();
-  renderCrecimiento();
+
+  const btn = document.querySelector('#modalBaja .btn-primary');
+  btn.disabled = true;
+  btn.textContent = 'Guardando...';
+
+  const hoy    = new Date().toISOString().split('T')[0];
+  const motivo = document.getElementById('bajaMotivo').value.trim();
+
+  try {
+    await fetch(APPS_SCRIPT_URL, {
+      method:  'POST',
+      mode:    'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
+      body:    JSON.stringify({
+        action: 'dar_baja',
+        dni:    j.dni,
+        nombre: j.nombre,
+        fecha:  hoy,
+        motivo,
+      }),
+    });
+
+    // Actualizar en memoria
+    j.estado    = 'baja';
+    j.fechaBaja = hoy;
+
+    cerrarModal('modalBaja');
+    renderIntegrantesTable();
+    renderCrecimiento();
+
+    const toast = document.createElement('div');
+    toast.textContent = `🔴 ${j.nombre.split(',')[0]} dado/a de baja`;
+    Object.assign(toast.style, {
+      position:'fixed', bottom:'80px', left:'50%', transform:'translateX(-50%)',
+      background:'#181818', color:'white', padding:'10px 18px', borderRadius:'8px',
+      fontSize:'13px', zIndex:'300', whiteSpace:'nowrap', boxShadow:'0 4px 16px rgba(0,0,0,0.2)'
+    });
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+
+  } catch(err) {
+    console.error('Error dando de baja:', err);
+    btn.disabled = false;
+    btn.textContent = 'Dar de baja';
+    alert('No se pudo guardar. Intentá de nuevo.');
+  }
 }
 
 // GRUPO FAMILIAR
@@ -1791,25 +1831,83 @@ function buscarGrupoAdmin() {
   };
 }
 
-function confirmarGrupo() {
-  const dni2    = normDNI(document.getElementById('grupoDniInput').value.trim());
+async function confirmarGrupo() {
+  const dni2     = normDNI(document.getElementById('grupoDniInput').value.trim());
   const relacion = document.getElementById('grupoRelacion').value;
   const j1 = JUGADORAS.find(x => x.dni === _accionDni);
   const j2 = JUGADORAS.find(x => x.dni === dni2);
   if (!j1 || !j2 || !relacion) return;
-  // En producción: guardar la asociación en DB
-  console.log(`Grupo familiar: ${j1.nombre} <-> ${j2.nombre} (${relacion})`);
-  cerrarModal('modalGrupo');
-  // Feedback visual
-  const toast = document.createElement('div');
-  toast.textContent = `✅ ${j1.nombre.split(',')[0]} asociado/a con ${j2.nombre.split(',')[0]}`;
-  Object.assign(toast.style, {
-    position:'fixed', bottom:'80px', left:'50%', transform:'translateX(-50%)',
-    background:'#181818', color:'white', padding:'10px 18px', borderRadius:'8px',
-    fontSize:'13px', zIndex:'300', whiteSpace:'nowrap', boxShadow:'0 4px 16px rgba(0,0,0,0.2)'
-  });
-  document.body.appendChild(toast);
-  setTimeout(() => toast.remove(), 3000);
+
+  const btn = document.getElementById('btnConfirmarGrupo');
+  btn.disabled = true;
+  btn.textContent = 'Guardando...';
+
+  try {
+    const payload = {
+      action:   'guardar_grupo',
+      titular:  { dni: j1.dni, nombre: j1.nombre },
+      familiar: { dni: j2.dni, nombre: j2.nombre },
+      relacion,
+    };
+
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = APPS_SCRIPT_URL;
+    form.style.display = 'none';
+    const input = document.createElement('input');
+    input.type  = 'hidden';
+    input.name  = 'payload';
+    input.value = JSON.stringify(payload);
+    form.appendChild(input);
+
+    // Usar fetch para no redirigir la página
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(payload),
+    });
+
+    // Actualizar grupos en memoria para que tome efecto inmediato
+    // Buscar si ya existe un grupo para el titular
+    let grupoId = null;
+    if (window._gruposSheet) {
+      const gTitular = window._gruposSheet.find(g => g.dni === j1.dni);
+      grupoId = gTitular ? gTitular.grupo_id : null;
+    }
+    if (!grupoId) {
+      // Generar nuevo grupo_id
+      const existentes = window._gruposSheet ? window._gruposSheet.map(g => g.grupo_id) : [];
+      const nums = existentes.map(g => parseInt(g.replace('G',''))).filter(n => !isNaN(n));
+      const next = nums.length > 0 ? Math.max(...nums) + 1 : 1;
+      grupoId = 'G' + String(next).padStart(2,'0');
+      if (!window._gruposSheet) window._gruposSheet = [];
+      window._gruposSheet.push({ grupo_id: grupoId, dni: j1.dni, nombre: j1.nombre, rol: 'titular' });
+    }
+    if (window._gruposSheet) {
+      window._gruposSheet.push({ grupo_id: grupoId, dni: j2.dni, nombre: j2.nombre, rol: 'familiar' });
+    }
+
+    // Recargar datos para reflejar el cambio en DB y pagos
+    await cargarDatos();
+
+    cerrarModal('modalGrupo');
+    const toast = document.createElement('div');
+    toast.textContent = `✅ ${j1.nombre.split(',')[0]} asociado/a con ${j2.nombre.split(',')[0]}`;
+    Object.assign(toast.style, {
+      position:'fixed', bottom:'80px', left:'50%', transform:'translateX(-50%)',
+      background:'#181818', color:'white', padding:'10px 18px', borderRadius:'8px',
+      fontSize:'13px', zIndex:'300', whiteSpace:'nowrap', boxShadow:'0 4px 16px rgba(0,0,0,0.2)'
+    });
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+
+  } catch(err) {
+    console.error('Error guardando grupo:', err);
+    btn.disabled = false;
+    btn.textContent = 'Asociar';
+    alert('No se pudo guardar. Intentá de nuevo.');
+  }
 }
 
 try {
