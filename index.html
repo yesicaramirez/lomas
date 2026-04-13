@@ -1368,7 +1368,7 @@ function recalc() {
   document.getElementById('btnPagar').disabled = false;
 }
 
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwu-0Ra5-c_hMsbzOZLpAFcjT1PE2bEpnqPOBq10usBBVETj1Uqe6FRjaJsq0q0wEQwGQ/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxrKT05jSKR2O3mJEfyKQjXDWmcwW4AimV9YZ2_7kvQd-fnJj6j42kNeKH_DlpbSownQg/exec';
 const MP_PUBLIC_KEY   = 'APP_USR-031a6920-8add-451f-b314-43cfa6eb92d0';
 
 // Muestra/oculta pantalla de carga
@@ -1589,8 +1589,10 @@ function buildAdminData() {
   if (!window._pagosSheet) return;
   ADMIN_DATA = window._pagosSheet.map(p => {
     const mesNombre = String(p['Mes'] || '').trim();
-    // Buscar año con o sin ñ (por problemas de encoding en el Sheet)
-    const anio = String(p['Anio'] || p['Año'] || p['Ano'] || '2026').trim();
+    // Buscar año por múltiples nombres posibles de columna
+    const anio = String(
+      p['Anio'] || p['Año'] || p['Ano'] || p['anio'] || p['año'] || p['AÑO'] || p['ANIO'] || 2026
+    ).trim();
     const mesAbrev  = mesNombre.slice(0,3);
     const j = JUGADORAS.find(x => x.dni === String(p['DNI']).trim());
     return {
