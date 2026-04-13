@@ -1380,6 +1380,12 @@ function setLoading(visible) {
 
 async function cargarDatos() {
   setLoading(true);
+
+  // Timeout de seguridad — si tarda más de 15s mostrar error
+  const timeout = setTimeout(() => {
+    setLoading(false);
+    document.getElementById('loadingError').style.display = 'block';
+  }, 15000);
   try {
     const res  = await fetch(APPS_SCRIPT_URL + '?action=datos');
     const data = await res.json();
@@ -1485,6 +1491,7 @@ async function cargarDatos() {
     console.error('Error cargando datos:', err);
     document.getElementById('loadingError').style.display = 'block';
   } finally {
+    clearTimeout(timeout);
     setLoading(false);
   }
 }
