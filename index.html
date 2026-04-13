@@ -1231,10 +1231,14 @@ function buscar() {
     // Verificar si debe inscripción aunque no tenga cuotas pendientes
     const debeInscr = grupo.some(p => soloDebeInscripcion(p.id));
     if (debeInscr) {
-      document.getElementById('payOpts').style.display   = 'block';
+      document.getElementById('payOpts').style.display     = 'block';
+      document.getElementById('payOpts').style.background  = 'none';
+      document.getElementById('payOpts').style.border      = 'none';
+      document.getElementById('payOpts').style.boxShadow   = 'none';
+      document.getElementById('payOpts').style.padding     = '0';
       document.getElementById('recargoNote').style.display = 'none';
-      document.getElementById('mesesCard').style.display  = 'none';
-      document.getElementById('alDiaMsg').style.display   = 'none';
+      document.getElementById('mesesCard').style.display   = 'none';
+      document.getElementById('alDiaMsg').style.display    = 'none';
       recalc();
     }
 
@@ -1697,6 +1701,8 @@ function reset() {
   document.getElementById('totalBox').style.display    = 'none';
   document.getElementById('stickyBar').style.display   = 'none';
   document.getElementById('mesesCard').style.display   = 'block';
+  const po = document.getElementById('payOpts');
+  po.style.background = ''; po.style.border = ''; po.style.boxShadow = ''; po.style.padding = '';
   document.getElementById('sc-exito').style.display    = 'none';
   document.getElementById('sc-search').style.display   = 'block';
   window.scrollTo({ top:0, behavior:'smooth' });
