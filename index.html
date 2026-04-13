@@ -1368,7 +1368,7 @@ function recalc() {
   document.getElementById('btnPagar').disabled = false;
 }
 
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxrKT05jSKR2O3mJEfyKQjXDWmcwW4AimV9YZ2_7kvQd-fnJj6j42kNeKH_DlpbSownQg/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwu-0Ra5-c_hMsbzOZLpAFcjT1PE2bEpnqPOBq10usBBVETj1Uqe6FRjaJsq0q0wEQwGQ/exec';
 const MP_PUBLIC_KEY   = 'APP_USR-031a6920-8add-451f-b314-43cfa6eb92d0';
 
 // Muestra/oculta pantalla de carga
@@ -1385,21 +1385,35 @@ async function cargarDatos() {
     if (data.error) throw new Error(data.error);
 
     const { jugadores, pagos, grupos } = data;
-    window._pagosSheet = pagos; // guardar para renderAdminTable
+    window._pagosSheet = pagos;
+    if (pagos.length > 0) console.log('Sheet Pagos keys:', Object.keys(pagos[0]), '| Anio value:', pagos[0]['Anio'], '| All values:', JSON.stringify(pagos[0]));
+
+    // Helper para obtener el año de un pago
+    function getPagoAnio(p) {
+      return String(p['Anio'] || p['Año'] || p['Ano'] || p['anio'] || '2026').trim();
+    }
+    window.getPagoAnio = getPagoAnio;
 
     // Actualizar opciones del filtro de mes dinámicamente
-    const mesesUnicos = [...new Set(pagos.map(p => p['Mes'].slice(0,3) + ' ' + p['Año']))].sort((a,b) => {
-      const mi = MESES.findIndex(m => m.startsWith(a.slice(0,3)));
-      const mj = MESES.findIndex(m => m.startsWith(b.slice(0,3)));
-      return mi - mj;
-    });
+    const mesesUnicos = [...new Set(pagos.map(p => p['Mes'].slice(0,3) + ' ' + getPagoAnio(p)))]
+      .sort((a,b) => {
+        const [ma, ya] = a.split(' ');
+        const [mb, yb] = b.split(' ');
+        if (ya !== yb) return parseInt(ya) - parseInt(yb);
+        return MESES.findIndex(m => m.startsWith(ma)) - MESES.findIndex(m => m.startsWith(mb));
+      });
+
     const selMes = document.getElementById('filterMes');
     selMes.innerHTML = '<option value="">Todos los meses</option>' +
       mesesUnicos.map(m => `<option value="${m}">${m}</option>`).join('');
-    // Seleccionar mes actual por defecto
+
+    // Seleccionar Abril 2026 por defecto
     const mesActualStr = MESES[MES_ACT].slice(0,3) + ' ' + new Date().getFullYear();
     const optAct = [...selMes.options].find(o => o.value === mesActualStr);
     if (optAct) selMes.value = mesActualStr;
+
+    console.log('Meses disponibles:', mesesUnicos);
+    if (pagos.length > 0) console.log('Keys de pago:', Object.keys(pagos[0]));
 
     // ── Construir DB (dni -> array de integrantes del grupo) ──
     // Primero mapear dni -> grupo_id
@@ -1589,10 +1603,13 @@ function buildAdminData() {
   if (!window._pagosSheet) return;
   ADMIN_DATA = window._pagosSheet.map(p => {
     const mesNombre = String(p['Mes'] || '').trim();
-    // Buscar año por múltiples nombres posibles de columna
-    const anio = String(
-      p['Anio'] || p['Año'] || p['Ano'] || p['anio'] || p['año'] || p['AÑO'] || p['ANIO'] || 2026
-    ).trim();
+    // Obtener año desde cualquier key disponible, fallback al año actual
+    const anioRaw = p['Anio'] !== undefined ? p['Anio'] :
+                    p['Año']  !== undefined ? p['Año']  :
+                    p['Ano']  !== undefined ? p['Ano']  :
+                    p['anio'] !== undefined ? p['anio'] :
+                    p['año']  !== undefined ? p['año']  : null;
+    const anio = anioRaw !== null ? String(anioRaw).trim() : String(new Date().getFullYear());
     const mesAbrev  = mesNombre.slice(0,3);
     const j = JUGADORAS.find(x => x.dni === String(p['DNI']).trim());
     return {
