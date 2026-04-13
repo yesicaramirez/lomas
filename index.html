@@ -631,6 +631,7 @@
     <div class="admin-tabs">
       <button class="admin-tab active" id="atab-pagos" onclick="switchAdminTab('pagos')">💰 Pagos</button>
       <button class="admin-tab" id="atab-jugadoras" onclick="switchAdminTab('jugadoras')">👥 Integrantes</button>
+      <button class="admin-tab" id="atab-liquidaciones" onclick="switchAdminTab('liquidaciones')">📊 Liquidaciones</button>
     </div>
     <div id="admin-pagos-section">
     <!-- Resumen compacto -->
@@ -773,6 +774,23 @@
       </table>
     </div>
   </div><!-- /admin-jugadoras -->
+
+  <!-- ══ LIQUIDACIONES TAB ══ -->
+  <div id="admin-liquidaciones" style="display:none">
+
+    <div style="margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+      <div>
+        <div style="font-family:'Playfair Display',serif;font-size:15px;font-weight:700;color:var(--black)">Liquidaciones mensuales</div>
+        <div style="font-size:12px;color:var(--text-soft);margin-top:2px">Sueldo de profes · Comisiones · Fondo del club</div>
+      </div>
+      <button onclick="cerrarMesManual()" style="padding:8px 16px;background:var(--black);color:white;border:none;border-radius:8px;font-family:'Inter',sans-serif;font-size:12px;font-weight:600;cursor:pointer">
+        + Cerrar mes manualmente
+      </button>
+    </div>
+
+    <div id="liquidacionesWrap"></div>
+
+  </div><!-- /admin-liquidaciones -->
   </div><!-- /admin-panel -->
 </div><!-- /view-admin -->
 
@@ -1379,8 +1397,7 @@ function recalc() {
   document.getElementById('btnPagar').disabled = false;
 }
 
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxJfShu6JDG51KY91Q-FllKyY34Hr2UojSy04P8Z5kucOA_RVeQTYN9wUbBK-zJ1rvpRA/exec';
-const MP_PUBLIC_KEY   = 'APP_USR-031a6920-8add-451f-b314-43cfa6eb92d0';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbywbYdxWlgiMnTRymS5dogSsQbKL0TS9J2AeA1MGUnR_Luj4BKRPUjfea3kUuJxbcf_NQ/exec';
 
 // Muestra/oculta pantalla de carga
 function setLoading(visible) {
@@ -1402,8 +1419,9 @@ async function cargarDatos() {
     if (data.error) throw new Error(data.error);
 
     const { jugadores, pagos, grupos } = data;
-    window._pagosSheet  = pagos;
-    window._gruposSheet = grupos;
+    window._pagosSheet        = pagos;
+    window._gruposSheet       = grupos;
+    window._liquidacionesSheet = data.liquidaciones || [];
 
     // Helper para obtener el año de un pago
     function getPagoAnio(p) {
@@ -1967,14 +1985,126 @@ cargarDatos();
 
 // -- ADMIN INNER TABS --
 function switchAdminTab(tab) {
-  document.getElementById('admin-pagos-section').style.display   = tab === 'pagos'     ? 'block' : 'none';
-  document.getElementById('admin-jugadoras').style.display       = tab === 'jugadoras' ? 'block' : 'none';
+  document.getElementById('admin-pagos-section').style.display    = tab === 'pagos'         ? 'block' : 'none';
+  document.getElementById('admin-jugadoras').style.display        = tab === 'jugadoras'     ? 'block' : 'none';
+  document.getElementById('admin-liquidaciones').style.display    = tab === 'liquidaciones' ? 'block' : 'none';
   document.querySelectorAll('.admin-tab').forEach(el => el.classList.remove('active'));
   document.getElementById('atab-' + tab).classList.add('active');
-  if (tab === 'jugadoras') { renderIntegrantesTable(); renderCrecimiento(); }
+  if (tab === 'jugadoras')     { renderIntegrantesTable(); renderCrecimiento(); }
+  if (tab === 'liquidaciones') renderLiquidaciones();
 }
 
-function renderCrecimiento() {
+function renderLiquidaciones() {
+  const liq = window._liquidacionesSheet || [];
+  const wrap = document.getElementById('liquidacionesWrap');
+
+  if (liq.length === 0) {
+    wrap.innerHTML = `<div style="text-align:center;padding:32px;color:var(--text-soft);font-size:13px">
+      No hay liquidaciones aún.<br>Se generan automáticamente el 1° de cada mes.
+    </div>`;
+    return;
+  }
+
+  // Ordenar más reciente primero
+  const sorted = [...liq].reverse();
+
+  wrap.innerHTML = sorted.map(l => {
+    const cuotas    = parseInt(l['Cuotas'])      || 0;
+    const comision  = parseInt(l['Comision_MP']) || 0;
+    const iibb      = parseInt(l['IIBB'])        || 0;
+    const banco     = parseInt(l['Banco'])       || 0;
+    const base      = parseInt(l['Base_Profes']) || 0;
+    const sueldo    = parseInt(l['Sueldo_Profe'])|| 0;
+    const inscr     = parseInt(l['Inscripciones'])|| 0;
+    const recargos  = parseInt(l['Recargos'])    || 0;
+    const fondoClub = inscr + recargos;
+
+    return `
+    <div style="background:var(--white);border:1px solid var(--border);border-radius:14px;margin-bottom:14px;overflow:hidden;box-shadow:var(--shadow)">
+      <!-- Header -->
+      <div style="background:var(--black);padding:14px 18px;display:flex;justify-content:space-between;align-items:center">
+        <div style="font-family:'Playfair Display',serif;font-size:16px;font-weight:700;color:var(--white)">${l['Mes']} ${l['Anio']}</div>
+        <span style="font-size:11px;font-weight:600;background:var(--pink);color:white;padding:3px 10px;border-radius:20px">${l['Estado']}</span>
+      </div>
+
+      <!-- Sueldo profe destacado -->
+      <div style="padding:18px;background:var(--pink-bg);border-bottom:1px solid var(--border);text-align:center">
+        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--pink-dark);margin-bottom:4px">💸 Sueldo por profe</div>
+        <div style="font-family:'Playfair Display',serif;font-size:36px;font-weight:700;color:var(--black)">$${sueldo.toLocaleString('es-AR')}</div>
+        <div style="font-size:12px;color:var(--text-soft);margin-top:4px">Base total $${base.toLocaleString('es-AR')} ÷ 4 profes</div>
+      </div>
+
+      <!-- Detalle -->
+      <div style="padding:16px 18px">
+        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--text-soft);margin-bottom:10px">Detalle del cálculo</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="display:flex;justify-content:space-between;font-size:13px">
+            <span>Cuotas cobradas</span>
+            <span style="font-weight:600">$${cuotas.toLocaleString('es-AR')}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--red)">
+            <span>— Comisión MP (1%)</span>
+            <span>-$${comision.toLocaleString('es-AR')}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--red)">
+            <span>— Ingresos brutos (1.6%)</span>
+            <span>-$${iibb.toLocaleString('es-AR')}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--red)">
+            <span>— Banco fijo</span>
+            <span>-$${banco.toLocaleString('es-AR')}</span>
+          </div>
+          <div style="border-top:1px solid var(--border);margin:4px 0"></div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700">
+            <span>Base para profes</span>
+            <span style="color:var(--pink-dark)">$${base.toLocaleString('es-AR')}</span>
+          </div>
+        </div>
+
+        <!-- Fondo club -->
+        <div style="margin-top:14px;padding:12px;background:var(--pink-bg);border-radius:8px;border:1px solid var(--pink-light)">
+          <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--text-soft);margin-bottom:8px">🏑 Fondo del club</div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
+            <span>Inscripciones</span>
+            <span style="font-weight:600">$${inscr.toLocaleString('es-AR')}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px">
+            <span>Recargos</span>
+            <span style="font-weight:600">$${recargos.toLocaleString('es-AR')}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;border-top:1px solid var(--pink-light);padding-top:8px">
+            <span>Total fondo club</span>
+            <span style="color:var(--pink-dark)">$${fondoClub.toLocaleString('es-AR')}</span>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function cerrarMesManual() {
+  if (!confirm('¿Cerrar el mes actual y calcular liquidación? Esta acción no se puede deshacer.')) return;
+  const btn = event.target;
+  btn.disabled = true;
+  btn.textContent = 'Calculando...';
+  try {
+    await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'cerrar_mes' }),
+    });
+    // Recargar datos
+    await cargarDatos();
+    renderLiquidaciones();
+    btn.textContent = '✅ Mes cerrado';
+    setTimeout(() => { btn.disabled = false; btn.textContent = '+ Cerrar mes manualmente'; }, 3000);
+  } catch(err) {
+    btn.disabled = false;
+    btn.textContent = '+ Cerrar mes manualmente';
+    alert('Error al cerrar el mes. Intentá de nuevo.');
+  }
+}
   // Construir mapa mes -> { altas, bajas }
   const meses = {};
   JUGADORAS.forEach(j => {
