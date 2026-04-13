@@ -1231,9 +1231,10 @@ function buscar() {
     // Verificar si debe inscripción aunque no tenga cuotas pendientes
     const debeInscr = grupo.some(p => soloDebeInscripcion(p.id));
     if (debeInscr) {
-      document.getElementById('payOpts').style.display = 'block';
+      document.getElementById('payOpts').style.display   = 'block';
       document.getElementById('recargoNote').style.display = 'none';
-      document.getElementById('mesesCard').style.display = 'none';
+      document.getElementById('mesesCard').style.display  = 'none';
+      document.getElementById('alDiaMsg').style.display   = 'none';
       recalc();
     }
 
@@ -1351,7 +1352,7 @@ function recalc() {
   const mesesArr = [...mesesSel].sort((a,b) => a-b);
 
   document.getElementById('payOpts').style.display = count > 0 ? 'block' : 'none';
-  document.getElementById('recargoNote').style.display = hayRec ? 'flex' : 'none';
+  document.getElementById('recargoNote').style.display = (hayRec && !soloInscripcion) ? 'flex' : 'none';
 
   // ¿Algún integrante solo debe inscripción? (se inscribió tarde, sin cuotas aún)
   const soloInscripcion = [...selIds].some(id => soloDebeInscripcion(id));
