@@ -1396,7 +1396,13 @@ function recalc() {
     ? INSCRIPCION * [...selIds].filter(id => debeInscripcion(id)).length
     : 0;
 
-  let grandTotal = inscTotal;
+  // En grupo mixto (algunos deben inscripción, otros no) siempre agregar inscripción
+  const hayInscPendiente = [...selIds].some(id => debeInscripcion(id));
+  const inscTotalFinal = hayInscPendiente
+    ? INSCRIPCION * [...selIds].filter(id => debeInscripcion(id)).length
+    : 0;
+
+  let grandTotal = inscTotalFinal;
   let lines = '';
 
   // Solo inscripción — sin cuotas todavía
@@ -1421,12 +1427,12 @@ function recalc() {
   }
 
   // Inscripción al inicio si aplica (primer pago o inscripción pendiente)
-  if (primerPago || inscPendiente) {
+  if (hayInscPendiente && !soloInscripcion) {
     const nPrimeras = [...selIds].filter(id => debeInscripcion(id)).length;
     lines += `
       <div class="total-line" style="margin-bottom:3px">
         <span class="tl-label" style="font-weight:700;color:var(--pink-dark)">Inscripción</span>
-        <span class="tl-val" style="color:var(--text-soft);font-size:11px">$${inscTotal.toLocaleString('es-AR')}</span>
+        <span class="tl-val" style="color:var(--text-soft);font-size:11px">$${inscTotalFinal.toLocaleString('es-AR')}</span>
       </div>
       <div class="total-line">
         <span class="tl-label">$${INSCRIPCION.toLocaleString('es-AR')}${nPrimeras > 1 ? ' × '+nPrimeras : ''}</span>
@@ -1438,7 +1444,11 @@ function recalc() {
   mesesArr.forEach((mes, idx) => {
     const base  = getPrecio(mes);
     const mitad = base / 2;
-    const mesTotal = calcMesTotal(mes, tipoAuto, count, recargo);
+    // Solo contar integrantes que deben este mes específico
+    const jugsQueDeben = [...selIds].filter(id => getMesesDeuda(id).includes(mes));
+    const countMes = jugsQueDeben.length;
+    if (countMes === 0) return; // nadie debe este mes
+    const mesTotal = calcMesTotal(mes, tipoAuto, countMes, recargo);
     grandTotal += mesTotal;
 
     if (idx > 0) lines += `<div class="tl-sep" style="margin:6px 0 4px"></div>`;
@@ -1448,13 +1458,13 @@ function recalc() {
         <span class="tl-val" style="color:var(--text-soft);font-size:11px">$${mesTotal.toLocaleString('es-AR')}</span>
       </div>`;
 
-    if (tipoAuto === 'familiar' && count >= 2) {
+    if (tipoAuto === 'familiar' && countMes >= 2) {
       lines += `
         <div class="total-line">
           <span class="tl-label">1er integrante</span>
           <span class="tl-val">$${base.toLocaleString('es-AR')}</span>
         </div>`;
-      for (let i = 1; i < count; i++) lines += `
+      for (let i = 1; i < countMes; i++) lines += `
         <div class="total-line">
           <span class="tl-label">${i+1}º integrante</span>
           <span class="tl-val">$${mitad.toLocaleString('es-AR')}</span>
