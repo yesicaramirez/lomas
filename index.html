@@ -1766,7 +1766,8 @@ function renderAdminTable() {
   );
 
   const recaudado   = filtered.filter(r => r.status === 'paid').reduce((s,r) => s + r.amount, 0);
-  const otros       = filtered.filter(r => r.status === 'paid').reduce((s,r) => s + r.recargo, 0);
+  const otros = filtered.filter(r => r.status === 'paid').reduce((s,r) => s + r.recargo, 0)
+              + window._pagosSheet.filter(p => p['Mes'] === 'Inscripcion' && p['Estado'] === 'pagado').reduce((s,p) => s + (parseInt(p['Monto'])||0), 0);
   const porCobrar   = filtered.filter(r => r.status === 'pending').reduce((s,r) => s + r.amount, 0);
   const pagadasN    = filtered.filter(r => r.status === 'paid').length;
   const pendientesN = filtered.filter(r => r.status === 'pending').length;
