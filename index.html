@@ -696,10 +696,10 @@
       <select class="f-select" id="filterCat" onchange="renderAdminTable()">
         <option value="">Todas las categorías</option>
         <option value="1ra">1ra</option>
-        <option value="3ra">3ra</option>
-        <option value="5ta">5ta</option>
+        <option value="6ta">6ta</option>
         <option value="7ma">7ma</option>
         <option value="Formativas">Formativas</option>
+        <option value="Mamis">Mamis</option>
       </select>
       <select class="f-select" id="filterEstado" onchange="renderAdminTable()">
         <option value="">Todos los estados</option>
@@ -1120,8 +1120,7 @@ function buscar() {
     return;
   }
 
-  // Normalizar lo que queda en el input
-  document.getElementById('dniInput').value = q;
+  // Guardar DNI limpio internamente
   try { localStorage.setItem('lomas_dni', q); } catch(e) {}
 
   grupo = g;
@@ -1225,7 +1224,6 @@ function renderMeses(todosMeses) {
            style="${bloqueado ? 'cursor:default;opacity:0.85' : ''}">
         ${sel ? '<span class="chip-check">✓</span>' : ''}
         ${MESES[m]}${vencido ? ' <span style="font-size:10px;opacity:0.7">(vencido)</span>' : ''}
-        ${bloqueado ? ' <span style="font-size:10px;opacity:0.5">·&nbsp;mín.</span>' : ''}
       </div>`;
   }).join('');
 }
