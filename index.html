@@ -1388,7 +1388,7 @@ async function cargarDatos() {
     document.getElementById('loadingError').style.display = 'block';
   }, 15000);
   try {
-    const res  = await fetch(APPS_SCRIPT_URL + '?action=datos');
+    const res  = await fetch(APPS_SCRIPT_URL + '?action=datos&t=' + Date.now());
     const data = await res.json();
 
     if (data.error) throw new Error(data.error);
