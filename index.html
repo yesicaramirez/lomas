@@ -549,8 +549,10 @@
 
         <!-- Meses adeudados -->
         <div class="cuota-block" id="payOpts" style="display:none">
-          <div class="cuota-heading"><div class="card-heading-dot"></div>Mes a pagar <span style="font-size:11px;font-weight:400;color:var(--text-soft);margin-left:4px">— tocá para deseleccionar</span></div>
-          <div id="mesesList" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:4px"></div>
+          <div id="mesesCard">
+            <div class="cuota-heading"><div class="card-heading-dot"></div>Mes a pagar <span style="font-size:11px;font-weight:400;color:var(--text-soft);margin-left:4px">— tocá para deseleccionar</span></div>
+            <div id="mesesList" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:4px"></div>
+          </div>
           <div class="recargo-note" id="recargoNote" style="display:none">
             <span>⚠️</span>
             <span>Se aplicará un recargo por pago fuera de término.</span>
@@ -1231,6 +1233,7 @@ function buscar() {
     if (debeInscr) {
       document.getElementById('payOpts').style.display = 'block';
       document.getElementById('recargoNote').style.display = 'none';
+      document.getElementById('mesesCard').style.display = 'none';
       recalc();
     }
 
@@ -1692,6 +1695,7 @@ function reset() {
   document.getElementById('historialIcon').textContent   = '▼';
   document.getElementById('totalBox').style.display    = 'none';
   document.getElementById('stickyBar').style.display   = 'none';
+  document.getElementById('mesesCard').style.display   = 'block';
   document.getElementById('sc-exito').style.display    = 'none';
   document.getElementById('sc-search').style.display   = 'block';
   window.scrollTo({ top:0, behavior:'smooth' });
