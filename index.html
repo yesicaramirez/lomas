@@ -1360,8 +1360,8 @@ function recalc() {
 }
 
 // URL del Apps Script desplegado — reemplazar después de crear el backend
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyERkZB3BvKY21tgwC6K5St79CI6q-7PhtYxgXti_UpRVxDCCAoH3T2HGPxmq07SdJC/exec';
-const MP_PUBLIC_KEY   = 'APP_USR-6350f7f5-f5d7-4177-877e-fb9b562cfbda';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw-rpUVSmnXhAb-y8tP01Dwc4JPkLKkG5RjNjAxmVQ1__qO7scauMuefS-Uvdqv6KD3Wg/exec';
+const MP_PUBLIC_KEY   = 'APP_USR-6350f7f5-f5d7-4177-877e-fb9b562cfbda'; // clave publica de prueba
 
 async function pagar() {
   const jugs     = grupo.filter(p => selIds.has(p.id));
@@ -1416,18 +1416,25 @@ async function pagar() {
 
     const res  = await fetch(APPS_SCRIPT_URL, {
       method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
+      mode:    'no-cors',  // Apps Script no soporta CORS directo
+      headers: { 'Content-Type': 'text/plain' }, // text/plain evita preflight
       body:    JSON.stringify(payload),
     });
 
-    const data = await res.json();
-
-    if (data.sandbox_init_point || data.init_point) {
-      // Redirigir al checkout de MP
-      window.location.href = data.sandbox_init_point || data.init_point;
-    } else {
-      throw new Error(data.error || 'No se recibio URL de pago');
-    }
+    // Con no-cors no podemos leer la respuesta — redirigimos via URL con params
+    // El Apps Script crea la preference y nos redirige directamente
+    // Alternativa: usar un form POST que no tiene restriccion CORS
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = APPS_SCRIPT_URL;
+    form.style.display = 'none';
+    const input = document.createElement('input');
+    input.type  = 'hidden';
+    input.name  = 'payload';
+    input.value = JSON.stringify(payload);
+    form.appendChild(input);
+    document.body.appendChild(form);
+    form.submit();
 
   } catch (err) {
     btn.disabled  = false;
@@ -1667,6 +1674,29 @@ try {
 
 document.addEventListener('DOMContentLoaded', initHome);
 initHome();
+
+// Manejar retorno desde MP
+(function() {
+  const params = new URLSearchParams(window.location.search);
+  const pago   = params.get('pago');
+  if (!pago) return;
+  // Limpiar URL
+  history.replaceState({}, '', window.location.pathname);
+  // Mostrar resultado
+  if (pago === 'ok') {
+    showViewById('player');
+    document.getElementById('sc-search').style.display = 'none';
+    document.getElementById('sc-exito').style.display  = 'block';
+    document.getElementById('exitoMsg').innerHTML =
+      'Tu pago fue procesado correctamente por Mercado Pago. ¡Gracias!';
+  } else if (pago === 'error') {
+    showViewById('player');
+    alert('El pago no pudo completarse. Podés intentarlo de nuevo.');
+  } else if (pago === 'pendiente') {
+    showViewById('player');
+    alert('Tu pago está pendiente de acreditación. Te avisaremos cuando se confirme.');
+  }
+})();
 
 // -- ADMIN INNER TABS --
 function switchAdminTab(tab) {
