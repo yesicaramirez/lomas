@@ -1388,6 +1388,21 @@ async function cargarDatos() {
     if (data.error) throw new Error(data.error);
 
     const { jugadores, pagos, grupos } = data;
+    window._pagosSheet = pagos; // guardar para renderAdminTable
+
+    // Actualizar opciones del filtro de mes dinámicamente
+    const mesesUnicos = [...new Set(pagos.map(p => p['Mes'].slice(0,3) + ' ' + p['Año']))].sort((a,b) => {
+      const mi = MESES.findIndex(m => m.startsWith(a.slice(0,3)));
+      const mj = MESES.findIndex(m => m.startsWith(b.slice(0,3)));
+      return mi - mj;
+    });
+    const selMes = document.getElementById('filterMes');
+    selMes.innerHTML = '<option value="">Todos los meses</option>' +
+      mesesUnicos.map(m => `<option value="${m}">${m}</option>`).join('');
+    // Seleccionar mes actual por defecto
+    const mesActualStr = MESES[MES_ACT].slice(0,3) + ' ' + new Date().getFullYear();
+    const optAct = [...selMes.options].find(o => o.value === mesActualStr);
+    if (optAct) selMes.value = mesActualStr;
 
     // ── Construir DB (dni -> array de integrantes del grupo) ──
     // Primero mapear dni -> grupo_id
@@ -1570,55 +1585,51 @@ function reset() {
 // -- ADMIN --
 // status: 'paid' | 'pending' | 'na'
 // recargo: monto de interés cobrado (separado de amount)
-const ADMIN_DATA = [
-  { name:'Arriola, Renata',            cat:'7ma',        month:'Abr 2025', amount:15000, recargo:2000, date:'08/04', status:'paid' },
-  { name:'Conde, Alma',                cat:'7ma',        month:'Abr 2025', amount:15000, recargo:0,    date:'05/04', status:'paid' },
-  { name:'Conde, Nahiara',             cat:'7ma',        month:'Abr 2025', amount:7500,  recargo:0,    date:'05/04', status:'paid' },
-  { name:'Ripepi, Guillermina',         cat:'1ra',        month:'Abr 2025', amount:15000, recargo:0,    date:'03/04', status:'paid' },
-  { name:'Bertero Ripepi, Francisco',  cat:'Formativas', month:'Abr 2025', amount:7500,  recargo:0,    date:'03/04', status:'paid' },
-  { name:'González, Amira',            cat:'Formativas', month:'Abr 2025', amount:15000, recargo:2000, date:'12/04', status:'paid' },
-  { name:'Ortiz, Olivia',              cat:'Formativas', month:'Abr 2025', amount:0,     recargo:0,    date:'-',     status:'pending' },
-  { name:'Hernández Cerezo, V.',        cat:'Formativas', month:'Abr 2025', amount:0,     recargo:0,    date:'-',     status:'pending' },
-  { name:'Rodríguez, Yesica',          cat:'1ra',        month:'Abr 2025', amount:0,     recargo:0,    date:'-',     status:'na' },
-  { name:'Pérez, Laura',               cat:'1ra',        month:'Abr 2025', amount:0,     recargo:0,    date:'-',     status:'na' },
-  { name:'Sosa, Valentina',            cat:'5ta',        month:'Mar 2025', amount:10000, recargo:0,    date:'07/03', status:'paid' },
-  { name:'Sosa, Milagros',             cat:'3ra',        month:'Mar 2025', amount:5000,  recargo:0,    date:'07/03', status:'paid' },
-  { name:'Romero, Julieta',            cat:'1ra',        month:'Mar 2025', amount:10000, recargo:2000, date:'14/03', status:'paid' },
-  { name:'Romero, Camila',             cat:'3ra',        month:'Mar 2025', amount:0,     recargo:0,    date:'-',     status:'pending' },
-];
+// ADMIN_DATA se construye desde PAGADOS y JUGADORAS del Sheet
+let ADMIN_DATA = [];
 
-// Jugadores activos únicos (todos excepto 'na')
-const TOTAL_ACTIVOS = [...new Set(ADMIN_DATA.filter(r => r.status !== 'na').map(r => r.name))].length;
+function buildAdminData() {
+  // Construir desde los pagos del Sheet
+  // _pagosSheet es el array crudo de pagos cargado en cargarDatos
+  if (!window._pagosSheet) return;
+  ADMIN_DATA = window._pagosSheet.map(p => {
+    const mesNombre = p['Mes'];
+    const anio = p['Año'];
+    const mesAbrev = mesNombre.slice(0,3);
+    const j = JUGADORAS.find(x => x.dni === p['DNI']);
+    return {
+      name:    p['Nombre'],
+      cat:     j ? j.cat : '',
+      month:   mesAbrev + ' ' + anio,
+      amount:  parseInt(p['Monto']) || 0,
+      recargo: p['Recargo'] === 'TRUE' ? CONFIG.RECARGO : 0,
+      date:    '-',
+      status:  p['Estado'] === 'pagado' ? 'paid' : p['Estado'] === 'no_aplica' ? 'na' : 'pending',
+      origen:  p['Origen'] || '',
+      paymentId: p['PaymentID'] || '',
+    };
+  });
+}
 
 function renderAdminTable() {
-  const fMes      = document.getElementById('filterMes').value;
-  const fCat      = document.getElementById('filterCat').value;
-  const fEstado   = document.getElementById('filterEstado').value;
+  buildAdminData();
+  const fMes       = document.getElementById('filterMes').value;
+  const fCat       = document.getElementById('filterCat').value;
+  const fEstado    = document.getElementById('filterEstado').value;
   const fIntegrante = document.getElementById('filterIntegrante').value.toLowerCase().trim();
 
   const filtered = ADMIN_DATA.filter(r =>
-    (!fMes      || r.month  === fMes) &&
-    (!fCat      || r.cat    === fCat) &&
-    (!fEstado   || r.status === fEstado) &&
+    (!fMes       || r.month === fMes) &&
+    (!fCat       || r.cat   === fCat) &&
+    (!fEstado    || r.status === fEstado) &&
     (!fIntegrante || r.name.toLowerCase().includes(fIntegrante))
   );
 
-  // Cuotas: solo monto base, sin recargo, sin 'na'
-  const recaudado = filtered.filter(r => r.status === 'paid').reduce((s,r) => s + r.amount, 0);
-  // Otros: suma de recargas cobrados
-  const otros     = filtered.filter(r => r.status === 'paid').reduce((s,r) => s + r.recargo, 0);
-  // Por cobrar: pendientes (estimado por cuota base del mes)
-  const porCobrar = filtered.filter(r => r.status === 'pending').reduce((s,r) => s + getPrecio(MES_ACT), 0);
-
-  const totalConCuota = ADMIN_DATA.filter((r,i,a) =>
-    r.status !== 'na' && a.findIndex(x => x.name === r.name && x.month === r.month) === i
-  ).length; // total de integrantes que pagan (sin duplicados por nombre+mes)
-
-  const pagadasN    = filtered.filter(r => r.status === 'paid').length;
-  const pendientesN = filtered.filter(r => r.status === 'pending').length;
-  const totalN      = pagadasN + pendientesN;
-  const pctPag      = totalN > 0 ? Math.round(pagadasN / totalN * 100) : 0;
-  const pctPend     = totalN > 0 ? Math.round(pendientesN / totalN * 100) : 0;
+  const recaudado  = filtered.filter(r => r.status === 'paid').reduce((s,r) => s + r.amount, 0);
+  const otros      = filtered.filter(r => r.status === 'paid').reduce((s,r) => s + r.recargo, 0);
+  const porCobrar  = filtered.filter(r => r.status === 'pending').reduce((s,r) => s + r.amount, 0);
+  const pagadasN   = filtered.filter(r => r.status === 'paid').length;
+  const pctPend    = totalN > 0 ? Math.round(pendientesN / totalN * 100) : 0;
 
   document.getElementById('statPagadas').textContent       = pagadasN;
   document.getElementById('statPagadasTotal').textContent  = totalN;
@@ -1633,17 +1644,20 @@ function renderAdminTable() {
   const mesLabel = document.getElementById('filterMes').value || 'Todos los meses';
   document.getElementById('statMesLabel').textContent      = mesLabel;
 
-  const statusLabel = { paid:'✅ Pago', pending:'⏳ Pendiente', na:'- No aplica' };
+  const statusLabel = { paid:'✅ Pago', pending:'⏳ Pendiente', na:'— No aplica' };
   const statusBadge = { paid:'b-paid', pending:'b-pending', na:'b-na' };
 
   document.getElementById('adminTable').innerHTML = filtered.length === 0
     ? `<tr><td colspan="6" style="text-align:center;color:var(--text-soft);padding:24px">Sin resultados para este filtro</td></tr>`
     : filtered.map(r => `
       <tr>
-        <td><strong>${r.name}</strong></td>
+        <td>
+          <strong>${r.name}</strong>
+          ${r.origen === 'mercadopago' ? '<span style="font-size:9px;background:#009ee3;color:white;padding:1px 5px;border-radius:3px;margin-left:4px;font-weight:700">MP</span>' : ''}
+        </td>
         <td style="white-space:nowrap;width:1px">${r.month.split(' ')[0]}</td>
         <td style="white-space:nowrap"><span class="badge ${statusBadge[r.status]}">${statusLabel[r.status]}</span></td>
-        <td style="white-space:nowrap">${r.status === 'na' ? '-' : r.status === 'pending' ? '-' : '$' + r.amount.toLocaleString('es-AR')}${r.recargo ? ` <span style="font-size:10px;color:var(--text-soft)">+$${r.recargo.toLocaleString('es-AR')}</span>` : ''}</td>
+        <td style="white-space:nowrap">${r.status === 'na' ? '—' : r.status === 'pending' ? '—' : '$' + r.amount.toLocaleString('es-AR')}${r.recargo ? ` <span style="font-size:10px;color:var(--text-soft)">+$${r.recargo.toLocaleString('es-AR')}</span>` : ''}</td>
         <td style="white-space:nowrap">${r.date}</td>
         <td><span class="badge" style="background:var(--pink-soft);color:var(--pink-dark);white-space:nowrap">${r.cat}</span></td>
       </tr>`).join('');
