@@ -692,8 +692,6 @@
         oninput="renderAdminTable()" style="font-family:'Inter',sans-serif;cursor:text;min-width:160px">
       <select class="f-select" id="filterMes" onchange="renderAdminTable()">
         <option value="">Todos los meses</option>
-        <option value="Abr 2025" selected>Abril 2025</option>
-        <option value="Mar 2025">Marzo 2025</option>
       </select>
       <select class="f-select" id="filterCat" onchange="renderAdminTable()">
         <option value="">Todas las categorías</option>
@@ -1101,6 +1099,18 @@ function buscar() {
     return;
   }
 
+  // Verificar si es exento ANTES de buscar en DB
+  const jugadoraExenta = JUGADORAS.find(j => j.dni === q && j.exento);
+  if (jugadoraExenta) {
+    document.getElementById('dniInput').classList.remove('error');
+    document.getElementById('grupoSection').style.display = 'none';
+    err.style.display = 'none';
+    document.getElementById('exentoMsg').style.display = 'block';
+    document.getElementById('exentoNombre').textContent = jugadoraExenta.nombre;
+    return;
+  }
+  document.getElementById('exentoMsg').style.display = 'none';
+
   const g = DB[q];
   if (!g) {
     document.getElementById('dniInput').classList.add('error');
@@ -1109,19 +1119,6 @@ function buscar() {
     document.getElementById('grupoSection').style.display = 'none';
     return;
   }
-
-  // Verificar si es exento
-  const jugadoraExenta = JUGADORAS.find(j => j.dni === q && j.exento);
-  if (jugadoraExenta) {
-    document.getElementById('dniInput').classList.remove('error');
-    document.getElementById('grupoSection').style.display = 'none';
-    err.style.display = 'none';
-    // Mostrar mensaje de exento
-    document.getElementById('exentoMsg').style.display = 'block';
-    document.getElementById('exentoNombre').textContent = jugadoraExenta.nombre;
-    return;
-  }
-  document.getElementById('exentoMsg').style.display = 'none';
 
   // Normalizar lo que queda en el input
   document.getElementById('dniInput').value = q;
@@ -1642,7 +1639,7 @@ function renderAdminTable() {
   document.getElementById('statOtros').textContent         = '$' + otros.toLocaleString('es-AR');
   document.getElementById('progressBar').style.width       = pctPag + '%';
   const mesLabel = document.getElementById('filterMes').value || 'Todos los meses';
-  document.getElementById('statMesLabel').textContent      = mesLabel;
+  document.getElementById('statMesLabel').textContent = mesLabel;
 
   const statusLabel = { paid:'✅ Pago', pending:'⏳ Pendiente', na:'— No aplica' };
   const statusBadge = { paid:'b-paid', pending:'b-pending', na:'b-na' };
@@ -1667,7 +1664,17 @@ function checkAdmin() {
   if (document.getElementById('adminPass').value === '1234') {
     document.getElementById('admin-login').style.display = 'none';
     document.getElementById('admin-panel').style.display = 'block';
-    renderAdminTable();
+    // Si los datos ya cargaron, renderizar. Si no, esperar.
+    if (window._pagosSheet) {
+      renderAdminTable();
+    } else {
+      const interval = setInterval(() => {
+        if (window._pagosSheet) {
+          clearInterval(interval);
+          renderAdminTable();
+        }
+      }, 200);
+    }
   } else {
     document.getElementById('adminPass').style.borderColor = 'var(--red)';
     document.getElementById('adminPass').value = '';
