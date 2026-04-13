@@ -2082,18 +2082,15 @@ try {
   if (saved) document.getElementById('dniInput').value = saved;
 } catch(e) {}
 
-document.addEventListener('DOMContentLoaded', initHome);
-initHome();
+document.addEventListener('DOMContentLoaded', () => {
+  initHome();
 
-// Hash routing — ir directo a la sección según la URL
-(function() {
+  // Hash routing — ir directo a la sección según la URL
   const hash = window.location.hash.replace('#', '');
   const rutas = { pagos: 'player', inscripcion: 'inscripcion', admin: 'admin' };
   if (rutas[hash]) {
-    // Esperar a que los datos carguen antes de navegar
     const nav = () => showView(rutas[hash]);
     if (hash === 'admin') {
-      // Admin necesita datos cargados
       const check = setInterval(() => {
         if (window._pagosSheet) { clearInterval(check); nav(); }
       }, 200);
@@ -2101,7 +2098,7 @@ initHome();
       nav();
     }
   }
-})();
+});
 
 // Actualizar hash cuando se cambia de sección
 const _showViewOrig = showView;
