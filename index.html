@@ -1397,7 +1397,7 @@ function recalc() {
   document.getElementById('btnPagar').disabled = false;
 }
 
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwnOS88qVWZmFuHoLthxRGzZrgdICJ-idbYYtb6flt0ga8u2ecykoaRLkNfAoqpQmOoFQ/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx4NYHDi1FQA2VB7r33ZacpxMgB3fnQnlvrUuueHBHpVUK8UXPbwoUI4RN4vnWZek3R5Q/exec';
 const MP_PUBLIC_KEY   = 'APP_USR-031a6920-8add-451f-b314-43cfa6eb92d0';
 
 // Muestra/oculta pantalla de carga
@@ -2019,7 +2019,7 @@ function renderLiquidaciones() {
     const inscr     = parseInt(l['Inscripciones'])|| 0;
     const recargos  = parseInt(l['Recargos'])    || 0;
     const impagas   = parseInt(l['Impagas'])     || 0;
-    const fondoClub = inscr + recargos + impagas;
+    const fondoClub = inscr + recargos;
 
     return `
     <div style="background:var(--white);border:1px solid var(--border);border-radius:14px;margin-bottom:14px;overflow:hidden;box-shadow:var(--shadow)">
@@ -2063,25 +2063,30 @@ function renderLiquidaciones() {
           </div>
         </div>
 
+        <!-- Nota explicativa -->
+        <div style="margin-top:14px;padding:12px 14px;background:#f8f8f8;border-radius:8px;border-left:3px solid var(--pink);font-size:12px;color:var(--text-soft);line-height:1.6">
+          <strong style="color:var(--black);display:block;margin-bottom:4px">📋 ¿Cómo se calcula el sueldo?</strong>
+          Se suman todas las cuotas cobradas por Mercado Pago durante el mes. A ese total se le descuenta la comisión de MP (1%), ingresos brutos (1.6%) y el mantenimiento bancario fijo. El resultado se divide en partes iguales entre los 4 profes.<br><br>
+          <strong style="color:var(--black)">¿Qué pasa con los que deben?</strong> Si alguien paga una cuota atrasada el mes siguiente, ese dinero se suma a la liquidación de ese mes — los profes siempre cobran todo lo que entra.
+        </div>
+
         <!-- Fondo club -->
         <div style="margin-top:14px;padding:12px;background:var(--pink-bg);border-radius:8px;border:1px solid var(--pink-light)">
           <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--text-soft);margin-bottom:8px">🏑 Fondo del club</div>
+          <div style="font-size:12px;color:var(--text-soft);margin-bottom:10px;line-height:1.5">Dinero que queda para gastos del club — no va a los profes.</div>
           <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
             <span>Inscripciones</span>
             <span style="font-weight:600">$${inscr.toLocaleString('es-AR')}</span>
           </div>
-          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px">
             <span>Recargos cobrados</span>
             <span style="font-weight:600">$${recargos.toLocaleString('es-AR')}</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px">
-            <span style="color:var(--text-soft)">Cuotas impagas al cierre</span>
-            <span style="font-weight:600;color:var(--text-soft)">$${impagas.toLocaleString('es-AR')}</span>
           </div>
           <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;border-top:1px solid var(--pink-light);padding-top:8px">
             <span>Total fondo club</span>
             <span style="color:var(--pink-dark)">$${fondoClub.toLocaleString('es-AR')}</span>
           </div>
+          ${impagas > 0 ? `<div style="margin-top:8px;font-size:11px;color:var(--text-soft);border-top:1px solid var(--pink-light);padding-top:8px">⚠️ Cuotas impagas al cierre: $${impagas.toLocaleString('es-AR')} — se cobrarán en meses siguientes y se sumarán a esa liquidación.</div>` : ''}
         </div>
       </div>
     </div>`;
