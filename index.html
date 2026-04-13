@@ -1164,7 +1164,12 @@ function buscar() {
     const todoPago = allPagados.length > 0 &&
       allPagados[allPagados.length-1].m >= MES_ACT;
 
-    document.getElementById('alDiaHistorial').innerHTML = allPagados.map(e => `
+    document.getElementById('alDiaHistorial').innerHTML = allPagados.length === 0
+      ? `<div style="text-align:center;padding:16px 0;color:var(--text-soft);font-size:13px;line-height:1.6">
+          🏑 Recién inscripto/a — aún no hay cuotas pendientes.<br>
+          <span style="font-size:12px">Tu primera cuota será en ${MESES[MES_ACT + 1] || 'el próximo mes'}.</span>
+         </div>`
+      : allPagados.map(e => `
       <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border)">
         <span style="font-size:14px;font-weight:500">${MESES[e.m]}</span>
         <div style="display:flex;align-items:center;gap:8px">
@@ -1173,7 +1178,7 @@ function buscar() {
         </div>
       </div>`).join('') + '<div style="height:1px"></div>';
 
-    document.getElementById('alDiaOk').style.display = todoPago ? 'block' : 'none';
+    document.getElementById('alDiaOk').style.display = (allPagados.length > 0 && todoPago) ? 'block' : 'none';
   } else {
     // Historial compacto para quien tiene deuda
     const allPagados = [];
@@ -1366,8 +1371,7 @@ function recalc() {
   document.getElementById('btnPagar').disabled = false;
 }
 
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxgw2XC3qv-OxLtH7DliEPqwJVxEuw-71Cii-aYpxWAYtFJnbrAfCNShXiYeU3h0Wxiig/exec';
-const MP_PUBLIC_KEY   = 'APP_USR-031a6920-8add-451f-b314-43cfa6eb92d0';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyOe36Pe-FDaldz1kMRfnMgudztizFwo8SnH95SAm8aG_0l1987KlHeGlfaPrnprG8i/exec';
 
 // Muestra/oculta pantalla de carga
 function setLoading(visible) {
