@@ -1019,11 +1019,16 @@ function tieneRecargo() { return HOY_DIA > CONFIG.DIA_LIMITE; }
 
 // Meses que debe el integrante = desde su mes de inscripción hasta MES_ACT, no pagados
 function getMesesDeuda(pid) {
-  const pagados = PAGADOS[pid] || [];
-  const integrante = Object.values(DB).flat().find(p => p.id === pid);
+  const pidStr  = String(pid);
+  const pagados = PAGADOS[pidStr] || [];
+  const integrante = Object.values(DB).flat().find(p => String(p.id) === pidStr);
   let desde = 0;
   if (integrante?.fechaInscripcion) {
-    const d = new Date(integrante.fechaInscripcion);
+    // Parsear como fecha local para evitar desfase UTC
+    const parts = integrante.fechaInscripcion.split('-');
+    const d = parts.length === 3
+      ? new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]))
+      : new Date(integrante.fechaInscripcion);
     if (!isNaN(d)) {
       desde = d.getDate() <= 10 ? d.getMonth() : d.getMonth() + 1;
     }
@@ -1032,7 +1037,7 @@ function getMesesDeuda(pid) {
   for (let i = desde; i <= MES_ACT; i++) {
     if (!pagados.some(p => p.m === i)) deuda.push(i);
   }
-  if (pid === '49937817') console.log('Vilchez debug:', { pid, fechaInscripcion: integrante?.fechaInscripcion, desde, MES_ACT, pagados, deuda });
+  console.log('getMesesDeuda:', { pid: pidStr, fechaInscripcion: integrante?.fechaInscripcion, desde, MES_ACT, deuda });
   return deuda;
 }
 
