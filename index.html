@@ -1021,7 +1021,6 @@ function tieneRecargo() { return HOY_DIA > CONFIG.DIA_LIMITE; }
 function getMesesDeuda(pid) {
   const pagados = PAGADOS[pid] || [];
   const integrante = Object.values(DB).flat().find(p => p.id === pid);
-  // Calcular mes de inicio desde fechaInscripcion real
   let desde = 0;
   if (integrante?.fechaInscripcion) {
     const d = new Date(integrante.fechaInscripcion);
@@ -1033,12 +1032,16 @@ function getMesesDeuda(pid) {
   for (let i = desde; i <= MES_ACT; i++) {
     if (!pagados.some(p => p.m === i)) deuda.push(i);
   }
+  if (pid === '49937817') console.log('Vilchez debug:', { pid, fechaInscripcion: integrante?.fechaInscripcion, desde, MES_ACT, pagados, deuda });
   return deuda;
 }
 
-// ¿Es el primer pago? (ningún mes pagado aún)
+// ¿Es el primer pago? (ningún mes pagado aún Y ya tiene deuda)
 function esPrimerPago(pid) {
-  return (PAGADOS[pid] || []).length === 0;
+  if ((PAGADOS[pid] || []).length > 0) return false;
+  // Si no tiene pagos, verificar si ya le corresponde pagar
+  const meses = getMesesDeuda(pid);
+  return meses.length > 0; // solo es "primer pago" si tiene meses pendientes
 }
 
 let grupo = [], selIds = new Set(), tipoAuto = 'regular';
@@ -1439,8 +1442,9 @@ async function cargarDatos() {
         nombre:  j['Apellido'] + ', ' + j['Nombre'],
         cat:     j['Categoria'],
         exento:  false,
-        fechaInscripcion: j['Fecha inscripcion'] || '',
+        fechaInscripcion: j['Fecha inscripcion'] || j['Fecha Inscripcion'] || j['fecha inscripcion'] || '',
       };
+      if (j['DNI'] === '49937817') console.log('Vilchez entry:', entry, '| Sheet keys:', Object.keys(j));
       if (gid) {
         if (!grupoMap[gid]) grupoMap[gid] = [];
         grupoMap[gid].push(entry);
