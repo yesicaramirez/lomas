@@ -380,6 +380,16 @@
   <button class="nav-menu-item" id="menuAdmin" onclick="showView('admin',this)">🔐 Panel</button>
 </div>
 
+<div id="loadingScreen" style="display:none;position:fixed;inset:0;z-index:500;background:var(--bg);flex-direction:column;align-items:center;justify-content:center;gap:14px">
+  <div style="font-size:32px">🏑</div>
+  <div style="font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:var(--black)">Lomas Hockey Club</div>
+  <div style="font-size:13px;color:var(--text-soft)">Cargando datos...</div>
+  <div id="loadingError" style="display:none;font-size:12px;color:var(--red);margin-top:8px;text-align:center;padding:0 32px">
+    No pudimos conectar con el servidor. Revisá tu conexión e intentá de nuevo.<br>
+    <button onclick="location.reload()" style="margin-top:10px;padding:8px 20px;background:var(--pink);color:white;border:none;border-radius:8px;font-family:'Inter',sans-serif;cursor:pointer">Reintentar</button>
+  </div>
+</div>
+
 <!-- ══ HOME ══ -->
 <div id="view-home" class="view active">
 
@@ -887,57 +897,16 @@
   </div>
 </div>
 <script>
-const DB = {
-  // Individual - al día
-  '12345678': [{ id:'p1', nombre:'Arriola, Renata', cat:'7ma' }],
-  // Individual - debe 2 meses
-  '11111111': [{ id:'p6', nombre:'Ortiz, Olivia', cat:'Formativas' }],
-  // Familiar 2 - debe meses distintos
-  '23456789': [
-    { id:'p2', nombre:'Conde, Alma',    cat:'7ma' },
-    { id:'p3', nombre:'Conde, Nahiara', cat:'7ma' }
-  ],
-  '34567890': [
-    { id:'p2', nombre:'Conde, Alma',    cat:'7ma' },
-    { id:'p3', nombre:'Conde, Nahiara', cat:'7ma' }
-  ],
-  // Familiar 3
-  '55555555': [
-    { id:'p7', nombre:'Sosa, Valentina',  cat:'5ta' },
-    { id:'p8', nombre:'Sosa, Milagros',   cat:'3ra' },
-    { id:'p9', nombre:'Sosa, Florencia',  cat:'7ma' }
-  ],
-  // Familiar 4
-  '66666666': [
-    { id:'p10', nombre:'Romero, Julieta',   cat:'1ra' },
-    { id:'p11', nombre:'Romero, Camila',    cat:'3ra' },
-    { id:'p12', nombre:'Romero, Antonella', cat:'5ta' },
-    { id:'p13', nombre:'Romero, Luciana',   cat:'7ma' }
-  ],
-  // Nuevo/a integrante - recién inscripto/a, debe inscripción + Abril
-  '20000001': [{ id:'pNueva', nombre:'Martínez, Sofía', cat:'7ma', inscripcionMes: 3 }],
-};
-const PAGADOS = {
-  p1:  [{m:0,f:'05/01'},{m:1,f:'03/02'},{m:2,f:'07/03'},{m:3,f:'04/04'}], // Arriola: al día
-  p2:  [{m:0,f:'05/01'},{m:1,f:'03/02'},{m:2,f:'07/03'}],
-  p3:  [{m:0,f:'05/01'},{m:1,f:'03/02'}],
-  p4:  [{m:0,f:'05/01'},{m:1,f:'03/02'},{m:2,f:'07/03'}],
-  p5:  [{m:0,f:'05/01'},{m:1,f:'03/02'}],
-  p6:  [{m:0,f:'06/01'},{m:1,f:'04/02'},{m:2,f:'08/03'}],
-  p7:  [{m:0,f:'05/01'},{m:1,f:'03/02'},{m:2,f:'07/03'}],
-  p8:  [{m:0,f:'05/01'},{m:1,f:'03/02'}],
-  p9:  [{m:0,f:'05/01'},{m:1,f:'03/02'},{m:2,f:'07/03'},{m:3,f:'04/04'}], // al día
-  p10: [{m:0,f:'05/01'},{m:1,f:'03/02'},{m:2,f:'07/03'}],
-  p11: [{m:0,f:'05/01'},{m:1,f:'03/02'},{m:2,f:'07/03'}],
-  p12: [{m:0,f:'05/01'}],
-  p13: [{m:0,f:'05/01'},{m:1,f:'03/02'},{m:2,f:'07/03'},{m:3,f:'04/04'}], // al día
-  pNueva: [],
-  p14: [{m:0,f:'06/01'}],
-};
+// DB y PAGADOS se construyen dinámicamente desde el Sheet
+let DB      = {};
+let PAGADOS = {};
+let JUGADORAS = [];
+let _datosListos = false;
+
 const MESES    = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const MESES_CORTO = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-const MES_ACT  = 3;  // Abril (0-indexed)
-const HOY_DIA  = 15; // simulado - en producción: new Date().getDate()
+const MES_ACT  = new Date().getMonth(); // mes actual real
+const HOY_DIA  = new Date().getDate();  // dia actual real
 
 // -- CONFIGURACIÓN DE MONTOS -- editar aquí para actualizar todo el sitio
 const CONFIG = {
@@ -1041,7 +1010,14 @@ function tieneRecargo() { return HOY_DIA > CONFIG.DIA_LIMITE; }
 function getMesesDeuda(pid) {
   const pagados = PAGADOS[pid] || [];
   const integrante = Object.values(DB).flat().find(p => p.id === pid);
-  const desde = integrante?.inscripcionMes ?? 0;
+  // Calcular mes de inicio desde fechaInscripcion real
+  let desde = 0;
+  if (integrante?.fechaInscripcion) {
+    const d = new Date(integrante.fechaInscripcion);
+    if (!isNaN(d)) {
+      desde = d.getDate() <= 10 ? d.getMonth() : d.getMonth() + 1;
+    }
+  }
   const deuda = [];
   for (let i = desde; i <= MES_ACT; i++) {
     if (!pagados.some(p => p.m === i)) deuda.push(i);
@@ -1359,9 +1335,95 @@ function recalc() {
   document.getElementById('btnPagar').disabled = false;
 }
 
-// URL del Apps Script desplegado — reemplazar después de crear el backend
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzLb5rSFpRHpYEihW_8pcS0dq5fdag7jOXa3mNXuZwRLJ-SLyYoyUmdZdtzHNdjcboaRw/exec';
-const MP_PUBLIC_KEY   = 'APP_USR-6350f7f5-f5d7-4177-877e-fb9b562cfbda'; // clave publica de prueba
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwu-0Ra5-c_hMsbzOZLpAFcjT1PE2bEpnqPOBq10usBBVETj1Uqe6FRjaJsq0q0wEQwGQ/exec';
+const MP_PUBLIC_KEY   = 'APP_USR-031a6920-8add-451f-b314-43cfa6eb92d0';
+
+// Muestra/oculta pantalla de carga
+function setLoading(visible) {
+  document.getElementById('loadingScreen').style.display = visible ? 'flex' : 'none';
+}
+
+async function cargarDatos() {
+  setLoading(true);
+  try {
+    const res  = await fetch(APPS_SCRIPT_URL + '?action=datos');
+    const data = await res.json();
+
+    if (data.error) throw new Error(data.error);
+
+    const { jugadores, pagos, grupos } = data;
+
+    // ── Construir DB (dni -> array de integrantes del grupo) ──
+    // Primero mapear dni -> grupo_id
+    const dniToGrupo = {};
+    grupos.forEach(g => { dniToGrupo[g.dni] = g.grupo_id; });
+
+    // Agrupar jugadores por grupo_id
+    const grupoMap = {}; // grupo_id -> [jugadores]
+    jugadores.forEach(j => {
+      if (j['Exento'] === 'TRUE') return; // exentos no entran en DB de pagos
+      const gid = dniToGrupo[j['DNI']];
+      const entry = {
+        id:      j['DNI'],
+        nombre:  j['Apellido'] + ', ' + j['Nombre'],
+        cat:     j['Categoria'],
+        exento:  false,
+        fechaInscripcion: j['Fecha inscripcion'] || '',
+      };
+      if (gid) {
+        if (!grupoMap[gid]) grupoMap[gid] = [];
+        grupoMap[gid].push(entry);
+      } else {
+        // Individual — clave es su propio DNI
+        DB[j['DNI']] = [entry];
+      }
+    });
+
+    // Agregar grupos familiares al DB (cada DNI del grupo apunta al mismo array)
+    Object.values(grupoMap).forEach(integrantes => {
+      integrantes.forEach(j => {
+        DB[j.id] = integrantes;
+      });
+    });
+
+    // ── Construir PAGADOS (dni -> [{m, f}]) ──
+    // Mapear nombre de mes a índice
+    const mesIdx = {};
+    MESES.forEach((m, i) => mesIdx[m.toLowerCase()] = i);
+
+    pagos.forEach(p => {
+      if (p['Estado'] !== 'pagado') return;
+      const dni = p['DNI'];
+      if (!PAGADOS[dni]) PAGADOS[dni] = [];
+      const m = mesIdx[p['Mes'].toLowerCase()];
+      if (m !== undefined && !PAGADOS[dni].some(e => e.m === m)) {
+        PAGADOS[dni].push({ m, f: '' }); // fecha no disponible en histórico
+      }
+    });
+
+    // ── Construir JUGADORAS para el panel admin ──
+    JUGADORAS = jugadores.map(j => ({
+      nombre:           j['Apellido'] + ', ' + j['Nombre'],
+      cat:              j['Categoria'],
+      dni:              j['DNI'],
+      tel:              j['Telefono'] || '',
+      fechaInscripcion: j['Fecha inscripcion'] || '',
+      fechaActivacion:  j['Fecha inscripcion'] || '',
+      fechaBaja:        '',
+      estado:           j['Exento'] === 'TRUE' ? 'exenta' : (j['Estado'] || 'activa'),
+      exento:           j['Exento'] === 'TRUE',
+    }));
+
+    _datosListos = true;
+    console.log(`Datos cargados: ${jugadores.length} jugadores, ${pagos.length} pagos, ${grupos.length} grupos`);
+
+  } catch(err) {
+    console.error('Error cargando datos:', err);
+    document.getElementById('loadingError').style.display = 'block';
+  } finally {
+    setLoading(false);
+  }
+}
 
 async function pagar() {
   const jugs     = grupo.filter(p => selIds.has(p.id));
@@ -1675,6 +1737,9 @@ try {
 document.addEventListener('DOMContentLoaded', initHome);
 initHome();
 
+// Cargar datos reales del Sheet al iniciar
+cargarDatos();
+
 // Manejar retorno desde MP
 (function() {
   const params = new URLSearchParams(window.location.search);
@@ -1752,23 +1817,8 @@ function renderCrecimiento() {
 
 // -- JUGADORAS DATA (demo) --
 // inscripcionMes: índice del mes en que se inscribió (0=Ene)
-const JUGADORAS = [
-  { nombre:'Arriola, Renata',           cat:'1ra',        dni:'12345678', tel:'2664111111', email:'renata@mail.com', tutor:'', fechaInscripcion:'2025-01-05', fechaActivacion:'2025-01-05', fechaBaja:'',         estado:'activa',    inscripcionMes:0 },
-  { nombre:'Calderon, Julissa',         cat:'1ra',        dni:'22222222', tel:'2664222222', email:'julissa@mail.com', tutor:'', fechaInscripcion:'2025-01-05', fechaActivacion:'2025-01-05', fechaBaja:'',         estado:'activa',    inscripcionMes:0 },
-  { nombre:'Conde, Alma',               cat:'7ma',        dni:'23456789', tel:'2664333333', email:'alma@mail.com', tutor:'Conde, María', fechaInscripcion:'2025-01-03', fechaActivacion:'2025-01-03', fechaBaja:'', estado:'activa',    inscripcionMes:0 },
-  { nombre:'Conde, Nahiara',            cat:'7ma',        dni:'34567890', tel:'2664333333', email:'alma@mail.com', tutor:'Conde, María', fechaInscripcion:'2025-01-03', fechaActivacion:'2025-01-03', fechaBaja:'', estado:'activa',    inscripcionMes:0 },
-  { nombre:'Gonzalez, Amira Mailen',   cat:'Formativas', dni:'77777777', tel:'2664444444', email:'amira@mail.com', tutor:'González, Johana', fechaInscripcion:'2025-01-04', fechaActivacion:'2025-01-04', fechaBaja:'', estado:'activa', inscripcionMes:0 },
-  { nombre:'Ortiz, Olivia',            cat:'Formativas', dni:'11111111', tel:'2664555555', email:'olivia@mail.com', tutor:'Ortiz Ávila, Amparo', fechaInscripcion:'2025-01-06', fechaActivacion:'2025-01-06', fechaBaja:'', estado:'activa', inscripcionMes:0 },
-  { nombre:'Sosa, Valentina',          cat:'Mamis',      dni:'55555550', tel:'2664666666', email:'valen@mail.com', tutor:'', fechaInscripcion:'2025-03-15', fechaActivacion:'2025-04-01', fechaBaja:'',          estado:'activa',    inscripcionMes:3 },
-  { nombre:'Sosa, Milagros',           cat:'Mamis',      dni:'55555551', tel:'2664666666', email:'valen@mail.com', tutor:'', fechaInscripcion:'2025-03-15', fechaActivacion:'2025-04-01', fechaBaja:'',          estado:'activa',    inscripcionMes:3 },
-  { nombre:'Romero, Julieta',          cat:'1ra',        dni:'66666660', tel:'2664777777', email:'julieta@mail.com', tutor:'', fechaInscripcion:'2025-01-08', fechaActivacion:'2025-01-08', fechaBaja:'',        estado:'activa',    inscripcionMes:0 },
-  { nombre:'Perez, Laura',             cat:'1ra',        dni:'88888888', tel:'2664888888', email:'laura@mail.com', tutor:'', fechaInscripcion:'2025-01-01', fechaActivacion:'2025-01-01', fechaBaja:'',          estado:'activa',    inscripcionMes:0 },
-  { nombre:'Torres, Malvina',          cat:'Mamis',      dni:'99999999', tel:'2664999999', email:'malvina@mail.com', tutor:'', fechaInscripcion:'2025-01-10', fechaActivacion:'',  fechaBaja:'',               estado:'pendiente', inscripcionMes:0 },
-  { nombre:'Blanco, Alison',           cat:'Formativas', dni:'10101010', tel:'2664100100', email:'alison@mail.com', tutor:'Blanco, Cecilia', fechaInscripcion:'2025-02-12', fechaActivacion:'2025-02-12', fechaBaja:'2025-03-30', estado:'baja', inscripcionMes:1 },
-];
-
-const STATUS_JUGADORA = { activa:'✅ Activo/a', pendiente:'⏳ Pendiente', baja:'🔴 Baja' };
-const BADGE_JUGADORA  = { activa:'b-paid', pendiente:'b-pending', baja:'b-overdue' };
+const STATUS_JUGADORA = { activa:'✅ Activo/a', pendiente:'⏳ Pendiente', baja:'🔴 Baja', exenta:'— No aplica' };
+const BADGE_JUGADORA  = { activa:'b-paid', pendiente:'b-pending', baja:'b-overdue', exenta:'b-na' };
 
 function renderIntegrantesTable() {
   const fNombre = document.getElementById('filterIntegranteNombre').value.toLowerCase().trim();
