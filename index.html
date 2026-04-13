@@ -2085,6 +2085,33 @@ try {
 document.addEventListener('DOMContentLoaded', initHome);
 initHome();
 
+// Hash routing — ir directo a la sección según la URL
+(function() {
+  const hash = window.location.hash.replace('#', '');
+  const rutas = { pagos: 'player', inscripcion: 'inscripcion', admin: 'admin' };
+  if (rutas[hash]) {
+    // Esperar a que los datos carguen antes de navegar
+    const nav = () => showView(rutas[hash]);
+    if (hash === 'admin') {
+      // Admin necesita datos cargados
+      const check = setInterval(() => {
+        if (window._pagosSheet) { clearInterval(check); nav(); }
+      }, 200);
+    } else {
+      nav();
+    }
+  }
+})();
+
+// Actualizar hash cuando se cambia de sección
+const _showViewOrig = showView;
+window.showView = function(view, el) {
+  _showViewOrig(view, el);
+  const hashes = { player: 'pagos', inscripcion: 'inscripcion', admin: 'admin', home: '' };
+  const hash = hashes[view] || '';
+  history.replaceState(null, '', hash ? '#' + hash : window.location.pathname);
+};
+
 // Cargar datos reales del Sheet al iniciar
 cargarDatos();
 
