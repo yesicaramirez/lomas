@@ -1397,7 +1397,7 @@ function recalc() {
   document.getElementById('btnPagar').disabled = false;
 }
 
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx4NYHDi1FQA2VB7r33ZacpxMgB3fnQnlvrUuueHBHpVUK8UXPbwoUI4RN4vnWZek3R5Q/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwYVqsaXoxMvFWbjYhpH5j0osTNQS8INmcCCjDuoUcukwEc8cYS4TPgYeRTTcGUfqp1SA/exec';
 const MP_PUBLIC_KEY   = 'APP_USR-031a6920-8add-451f-b314-43cfa6eb92d0';
 
 // Muestra/oculta pantalla de carga
@@ -2099,21 +2099,21 @@ async function cerrarMesManual() {
   btn.disabled = true;
   btn.textContent = 'Calculando...';
   try {
-    await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ action: 'cerrar_mes' }),
-    });
+    // Usar GET con parámetro para evitar problemas de CORS con POST
+    const res = await fetch(APPS_SCRIPT_URL + '?action=cerrar_mes&t=' + Date.now());
+    const data = await res.json();
+    console.log('Cierre mes respuesta:', data);
+    if (data.error) throw new Error(data.error);
     // Recargar datos
     await cargarDatos();
     renderLiquidaciones();
     btn.textContent = '✅ Mes cerrado';
     setTimeout(() => { btn.disabled = false; btn.textContent = '+ Cerrar mes manualmente'; }, 3000);
   } catch(err) {
+    console.error('Error al cerrar mes:', err);
     btn.disabled = false;
     btn.textContent = '+ Cerrar mes manualmente';
-    alert('Error al cerrar el mes. Intentá de nuevo.');
+    alert('Error: ' + err.message);
   }
 }
 
