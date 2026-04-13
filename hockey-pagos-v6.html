@@ -1,0 +1,1966 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lomas Hockey Club — Pagos</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --pink:       #c4758f;
+    --pink-dark:  #9e5470;
+    --pink-light: #e8b4c4;
+    --pink-bg:    #fdf0f4;
+    --pink-soft:  #f5dce5;
+    --black:      #181818;
+    --text:       #242424;
+    --text-soft:  #888;
+    --white:      #fff;
+    --red:        #b83232;
+    --red-light:  #fdecea;
+    --border:     #ead4dc;
+    --bg:         #fcf7f9;
+    --shadow:     0 2px 12px rgba(160,80,110,0.08);
+    --shadow-md:  0 4px 24px rgba(160,80,110,0.13);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg); color: var(--text);
+    min-height: 100vh; -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── NAV ── */
+  nav {
+    background: var(--black); height: 56px;
+    padding: 0 16px; display: flex; align-items: center;
+    justify-content: space-between; position: sticky; top: 0; z-index: 100;
+    border-bottom: 2px solid var(--pink);
+  }
+  .nav-logo {
+    display: flex; align-items: center; gap: 8px;
+    color: var(--white); font-family: 'Playfair Display', serif;
+    font-size: 16px; font-weight: 700; white-space: nowrap;
+  }
+  .nav-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--pink); flex-shrink: 0; }
+
+  /* Hamburger button */
+  .nav-burger {
+    display: flex; flex-direction: column; justify-content: center;
+    gap: 5px; width: 36px; height: 36px; cursor: pointer;
+    background: none; border: none; padding: 4px; flex-shrink: 0;
+  }
+  .nav-burger span {
+    display: block; width: 22px; height: 2px;
+    background: var(--white); border-radius: 2px;
+    transition: all 0.25s; transform-origin: center;
+  }
+  .nav-burger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+  .nav-burger.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+  .nav-burger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+  /* Dropdown menu */
+  .nav-menu {
+    display: none; position: absolute; top: 56px; left: 0; right: 0;
+    background: var(--black); border-bottom: 2px solid var(--pink);
+    padding: 8px 0; z-index: 99;
+  }
+  .nav-menu.open { display: block; }
+  .nav-menu-item {
+    display: block; width: 100%; padding: 14px 20px;
+    font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 500;
+    color: rgba(255,255,255,0.6); background: none; border: none;
+    text-align: left; cursor: pointer; transition: all 0.15s;
+    border-left: 3px solid transparent;
+  }
+  .nav-menu-item:hover { color: var(--white); background: rgba(255,255,255,0.04); }
+  .nav-menu-item.active {
+    color: var(--white); font-weight: 600;
+    border-left-color: var(--pink);
+    background: rgba(196,117,143,0.08);
+  }
+
+  /* ── LAYOUT ── */
+  .view { display: none; } .view.active { display: block; }
+  .wrap { max-width: 440px; margin: 0 auto; padding: 32px 16px 80px; }
+
+  /* ── PAGE HEADER ── */
+  .page-header { margin-bottom: 26px; }
+  .page-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 26px; font-weight: 700; color: var(--black); line-height: 1.2;
+  }
+  .page-sub { margin-top: 5px; color: var(--text-soft); font-size: 13px; font-weight: 400; line-height: 1.5; }
+
+  /* ── CARD ── */
+  .card {
+    background: var(--white); border-radius: 12px;
+    padding: 20px; margin-bottom: 12px;
+    box-shadow: var(--shadow-md); border: 1px solid var(--border);
+  }
+  .card-heading {
+    font-family: 'Playfair Display', serif;
+    font-size: 14px; font-weight: 600; color: var(--black);
+    margin-bottom: 14px; padding-bottom: 10px;
+    border-bottom: 1px solid var(--pink-soft);
+    display: flex; align-items: center; gap: 7px;
+  }
+  .card-heading-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--pink); flex-shrink: 0; }
+
+  /* ── SEARCH ── */
+  .search-row { display: flex; gap: 8px; }
+  .input-field {
+    width: 100%; padding: 11px 14px;
+    border: 1px solid var(--border); border-radius: 8px;
+    font-size: 14px; font-family: 'Inter', sans-serif;
+    background: var(--pink-bg); color: var(--text); outline: none;
+    transition: all 0.2s; display: block; box-sizing: border-box;
+  }
+  .input-field:focus { border-color: var(--pink); background: var(--white); box-shadow: 0 0 0 3px rgba(196,117,143,0.1); }
+  .input-field.error { border-color: var(--red); }
+  .search-input { flex: 1; }
+  .error-msg { color: var(--red); font-size: 12px; margin-top: 8px; display: none; line-height: 1.4; }
+
+  .btn-search {
+    padding: 0 18px; height: 44px; border-radius: 8px; border: none;
+    background: var(--pink); color: var(--white);
+    font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600;
+    cursor: pointer; white-space: nowrap; transition: background 0.2s; letter-spacing: 0.2px;
+  }
+  .btn-search:hover { background: var(--pink-dark); }
+
+  /* ── PLAYER ROWS ── */
+  .player-row {
+    display: flex; align-items: center; gap: 11px;
+    padding: 11px 13px; border: 1px solid var(--border);
+    border-radius: 10px; margin-bottom: 7px;
+    cursor: pointer; transition: all 0.15s;
+    background: var(--pink-bg); user-select: none;
+  }
+  .player-row:last-child { margin-bottom: 0; }
+  .player-row:hover:not(.disabled) { border-color: var(--pink); background: var(--pink-soft); }
+  .player-row.selected {
+    border-color: var(--pink); background: var(--pink-soft);
+    box-shadow: 0 0 0 2px rgba(196,117,143,0.15);
+  }
+  .player-row.disabled { opacity: 0.45; cursor: not-allowed; }
+
+  .check {
+    width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0;
+    border: 1.5px solid var(--border); background: var(--white);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700; transition: all 0.15s; color: transparent;
+  }
+  .player-row.selected .check { background: var(--pink); border-color: var(--pink); color: var(--white); }
+  .player-row.disabled .check { background: #bbb; border-color: #bbb; color: white; }
+
+  .avatar {
+    width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
+    background: var(--pink); color: var(--white);
+    font-family: 'Playfair Display', serif; font-weight: 700; font-size: 13px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .player-row.disabled .avatar { background: #c0b0b5; }
+
+  .p-name { font-size: 13px; font-weight: 600; color: var(--text); }
+  .p-cat  { font-size: 11px; color: var(--text-soft); margin-top: 1px; font-weight: 400; }
+  .paid-pill {
+    display: inline-flex; align-items: center; gap: 2px;
+    background: #e6f4ee; color: #2d6a4f;
+    font-size: 10px; font-weight: 600; padding: 1px 7px;
+    border-radius: 20px; margin-left: 5px; vertical-align: middle;
+  }
+
+  /* ── CUOTA BLOCK ── */
+  .cuota-block {
+    background: var(--white); border: 1px solid var(--border);
+    border-radius: 12px; padding: 18px 20px; margin-bottom: 12px;
+    box-shadow: var(--shadow);
+  }
+  .cuota-heading {
+    font-family: 'Playfair Display', serif;
+    font-size: 14px; font-weight: 600; color: var(--black);
+    margin-bottom: 14px; padding-bottom: 10px;
+    border-bottom: 1px solid var(--pink-soft);
+    display: flex; align-items: center; gap: 7px;
+  }
+  .selects-row { display: flex; gap: 9px; flex-wrap: wrap; }
+  .select-field {
+    padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px;
+    font-family: 'Inter', sans-serif; font-size: 13px;
+    background: var(--pink-bg); color: var(--text); outline: none;
+    cursor: pointer; flex: 1; min-width: 130px; transition: all 0.2s;
+    font-weight: 400;
+  }
+  .select-field:focus { border-color: var(--pink); background: var(--white); box-shadow: 0 0 0 3px rgba(196,117,143,0.1); }
+
+  .recargo-note {
+    display: flex; align-items: flex-start; gap: 7px; margin-top: 11px;
+    background: var(--red-light); border-radius: 8px;
+    padding: 9px 12px; font-size: 12px; color: var(--red);
+    line-height: 1.45; border-left: 3px solid var(--red);
+  }
+
+  /* ── TOTAL PREVIEW ── */
+  .total-box {
+    background: var(--pink-soft); border-radius: 12px;
+    border: 1px solid var(--pink-light);
+    padding: 18px 20px; margin-bottom: 12px; display: none;
+  }
+  .total-box-label {
+    font-size: 10px; font-weight: 600; letter-spacing: 1.2px;
+    text-transform: uppercase; color: var(--pink-dark);
+    margin-bottom: 4px;
+  }
+  .total-box-amount {
+    font-family: 'Playfair Display', serif;
+    font-size: 32px; font-weight: 700; color: var(--black);
+    margin-bottom: 14px; line-height: 1;
+  }
+  .total-lines {
+    border-top: 1px solid var(--pink-light);
+    padding-top: 11px; display: flex; flex-direction: column; gap: 6px;
+  }
+  .total-line {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 12px;
+  }
+  .tl-label { color: var(--text-soft); }
+  .tl-val   { color: var(--text); font-weight: 600; }
+  .tl-recargo-label { color: var(--red); }
+  .tl-recargo-val   { color: var(--red); font-weight: 600; }
+  .tl-sep { border-top: 1px solid var(--pink-light); margin: 2px 0; }
+  .tl-final-label { color: var(--text); font-weight: 700; }
+  .tl-final-val   { color: var(--pink-dark); font-weight: 800; font-size: 14px; }
+
+  /* ── BUTTONS ── */
+  .btn-primary {
+    width: 100%; padding: 14px; background: var(--pink); color: var(--white);
+    border: none; border-radius: 10px; font-family: 'Inter', sans-serif;
+    font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    letter-spacing: 0.2px;
+  }
+  .btn-primary:hover { background: var(--pink-dark); transform: translateY(-1px); box-shadow: 0 6px 18px rgba(160,80,110,0.25); }
+  .btn-primary:disabled { opacity: 0.3; cursor: not-allowed; transform: none; box-shadow: none; }
+  .btn-ghost {
+    background: transparent; border: 1px solid var(--border); color: var(--text-soft);
+    border-radius: 9px; padding: 10px 20px; font-family: 'Inter', sans-serif;
+    font-size: 13px; cursor: pointer; transition: all 0.15s;
+  }
+  .btn-ghost:hover { border-color: var(--pink-light); color: var(--pink-dark); }
+
+  .mp-note {
+    text-align: center; margin-top: 9px; font-size: 11px; color: var(--text-soft);
+    display: flex; align-items: center; justify-content: center; gap: 5px;
+  }
+  .mp-logo { background: #009ee3; color: white; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 3px; }
+
+  /* ── SUMMARY SCREEN ── */
+  .s-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 0; border-bottom: 1px solid var(--border);
+  }
+  .s-row:last-child { border-bottom: none; }
+  .s-lbl { font-size: 13px; color: var(--text-soft); }
+  .s-val { font-size: 13px; font-weight: 600; }
+  .s-total-row {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: 14px 0 2px;
+  }
+  .s-total-lbl { font-family: 'Playfair Display', serif; font-size: 15px; font-weight: 600; }
+  .s-total-amt { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 700; color: var(--pink-dark); }
+
+  /* ── SUCCESS ── */
+  .success-wrap { text-align: center; padding: 36px 16px; }
+  .success-icon {
+    width: 72px; height: 72px; background: var(--pink-soft);
+    border-radius: 50%; display: flex; align-items: center;
+    justify-content: center; font-size: 30px; margin: 0 auto 18px;
+    animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  @keyframes popIn { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .success-title {
+    font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700;
+    color: var(--black); margin-bottom: 8px;
+  }
+  .success-sub { color: var(--text-soft); font-size: 13px; line-height: 1.6; }
+
+  /* ── ADMIN ── */
+  .admin-wrap { max-width: 960px; margin: 0 auto; padding: 28px 16px 64px; }
+  .admin-hdr { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 22px; flex-wrap: wrap; gap: 12px; }
+  .admin-title { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; color: var(--black); }
+  .admin-sub { font-size: 12px; color: var(--text-soft); margin-top: 3px; }
+  .stats-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 11px; margin-bottom: 18px; }
+  .stat-card { background: var(--white); border-radius: 12px; padding: 17px 18px; box-shadow: var(--shadow-md); border: 1px solid var(--border); }
+  .stat-val { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 700; line-height: 1; margin-bottom: 4px; }
+  .stat-lbl { font-size: 11px; color: var(--text-soft); }
+  .filters { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+  .f-select { padding: 8px 13px; border: 1px solid var(--border); border-radius: 7px; font-family: 'Inter', sans-serif; font-size: 12px; background: var(--white); color: var(--text); outline: none; cursor: pointer; }
+  .tbl-wrap { background: var(--white); border-radius: 12px; box-shadow: var(--shadow-md); overflow-x: auto; border: 1px solid var(--border); -webkit-overflow-scrolling: touch; }
+  table { width: 100%; border-collapse: collapse; min-width: 500px; }
+  thead { background: var(--black); }
+  th { padding: 11px 16px; text-align: left; font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 600; color: var(--pink-light); text-transform: uppercase; letter-spacing: 1px; }
+  td { padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: 13px; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--pink-bg); }
+  .badge { display: inline-flex; align-items: center; padding: 2px 9px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+  .b-paid    { background: #e6f4ee; color: #2d6a4f; }
+  .b-pending { background: #fff8e1; color: #a07000; }
+  .b-na      { background: #f0f0f0; color: #888; }
+  .b-overdue { background: var(--red-light); color: var(--red); }
+  .b-regular { background: var(--pink-soft); color: var(--pink-dark); }
+  .b-familiar{ background: #ece8fd; color: #5b21b6; }
+  .export-btn { display: flex; align-items: center; gap: 6px; padding: 8px 15px; background: var(--white); border: 1px solid var(--border); border-radius: 7px; font-family: 'Inter', sans-serif; font-size: 12px; cursor: pointer; color: var(--text); transition: all 0.15s; }
+  .export-btn:hover { border-color: var(--pink); color: var(--pink-dark); }
+
+  .mes-chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 6px 13px; border-radius: 20px; font-size: 13px; font-weight: 500;
+    border: 1.5px solid var(--border); background: var(--pink-bg);
+    cursor: pointer; transition: all 0.15s; user-select: none; color: var(--text);
+  }
+  .mes-chip:hover { border-color: var(--pink); }
+  .mes-chip.selected { background: var(--pink); border-color: var(--pink); color: var(--white); font-weight: 600; }
+  .mes-chip.vencido { border-style: dashed; }
+  .mes-chip .chip-check { font-size: 11px; }
+  .login-wrap {
+    min-height: calc(100vh - 56px);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: flex-start;
+    padding: 40px 24px 32px; text-align: center;
+  }
+  .login-card {
+    width: 100%; max-width: 360px;
+    background: var(--white); border-radius: 16px;
+    border: 1px solid var(--border); box-shadow: var(--shadow-md);
+    padding: 32px 28px;
+  }
+  .login-logo {
+    width: 56px; height: 56px; border-radius: 50%;
+    background: var(--pink-soft); border: 2px solid var(--pink-light);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px; margin: 0 auto 20px;
+  }
+  .login-wrap h2 { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; color: var(--black); margin-bottom: 6px; }
+  .login-wrap p { font-size: 13px; color: var(--text-soft); margin-bottom: 24px; line-height: 1.5; }
+  .login-input { width: 100%; padding: 12px 15px; border: 1px solid var(--border); border-radius: 9px; font-size: 15px; font-family: 'Inter', sans-serif; margin-bottom: 12px; outline: none; background: var(--pink-bg); transition: all 0.2s; display: block; }
+  .login-input:focus { border-color: var(--pink); background: white; box-shadow: 0 0 0 3px rgba(196,117,143,0.1); }
+
+  .form-label { display: block; font-size: 12px; font-weight: 600; color: var(--text-soft); margin-bottom: 5px; letter-spacing: 0.2px; }
+
+  /* Admin inner tabs */
+  .admin-tabs { display: flex; gap: 0; margin-bottom: 20px; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .admin-tab {
+    flex: 1; padding: 10px 16px; border: none; background: var(--white);
+    font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 500;
+    color: var(--text-soft); cursor: pointer; transition: all 0.15s;
+    border-right: 1px solid var(--border);
+  }
+  .admin-tab:last-child { border-right: none; }
+  .admin-tab.active { background: var(--black); color: var(--pink-light); font-weight: 600; }
+  .admin-tab:hover:not(.active) { background: var(--pink-bg); }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">
+    <div class="nav-dot"></div>
+    Lomas Hockey Club
+  </div>
+  <button class="nav-burger" id="navBurger" onclick="toggleMenu()" aria-label="Menú">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+<div class="nav-menu" id="navMenu">
+  <button class="nav-menu-item active" id="menuHome" onclick="showView('home',this)">🏠 Inicio</button>
+  <button class="nav-menu-item" id="menuPlayer" onclick="showView('player',this)">🏑 Pagos</button>
+  <button class="nav-menu-item" id="menuInscripcion" onclick="showView('inscripcion',this)">📋 Inscripción</button>
+  <button class="nav-menu-item" id="menuAdmin" onclick="showView('admin',this)">🔐 Panel</button>
+</div>
+
+<!-- ══ HOME ══ -->
+<div id="view-home" class="view active">
+
+  <!-- Hero -->
+  <div style="background:var(--black);padding:48px 20px 40px;text-align:center;border-bottom:3px solid var(--pink)">
+    <div style="font-size:13px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--pink-light);margin-bottom:10px">San Luis, Argentina</div>
+    <div style="font-family:'Playfair Display',serif;font-size:36px;font-weight:700;color:var(--white);line-height:1.15;margin-bottom:10px">Lomas<br>Hockey Club</div>
+    <div style="font-size:14px;color:rgba(255,255,255,0.55);margin-bottom:28px;line-height:1.6">Hockey sobre césped en la Ciudad de La Punta.<br>Para todas las edades y niveles.</div>
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+      <button class="btn-primary" style="width:auto;padding:13px 24px" onclick="showViewById('inscripcion')">Quiero inscribirme</button>
+      <a href="https://instagram.com/lomas.hockeyclub.sanluis" target="_blank"
+        style="display:inline-flex;align-items:center;gap:7px;padding:13px 20px;border:1px solid rgba(255,255,255,0.25);border-radius:10px;color:var(--white);font-size:14px;font-weight:500;text-decoration:none;font-family:'Inter',sans-serif;transition:all 0.2s">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
+        @lomas.hockeyclub.sanluis
+      </a>
+    </div>
+  </div>
+
+  <div style="max-width:480px;margin:0 auto;padding:28px 16px 80px">
+
+    <!-- Entrenamientos -->
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-heading"><div class="card-heading-dot"></div>Entrenamientos</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div style="background:var(--pink-bg);border:1px solid var(--pink-light);border-radius:10px;padding:14px;text-align:center">
+          <div style="font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:var(--black)">Martes</div>
+          <div style="font-size:13px;color:var(--text-soft);margin-top:4px">20:00 — 22:00 hs</div>
+        </div>
+        <div style="background:var(--pink-bg);border:1px solid var(--pink-light);border-radius:10px;padding:14px;text-align:center">
+          <div style="font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:var(--black)">Jueves</div>
+          <div style="font-size:13px;color:var(--text-soft);margin-top:4px">20:00 — 22:00 hs</div>
+        </div>
+      </div>
+      <div style="margin-top:12px;display:flex;align-items:flex-start;gap:9px;padding:11px 13px;background:var(--pink-bg);border-radius:9px;border:1px solid var(--pink-light)">
+        <span style="font-size:16px;flex-shrink:0">📍</span>
+        <div>
+          <div style="font-size:13px;font-weight:600;color:var(--black)">Polideportivo Municipal</div>
+          <div style="font-size:12px;color:var(--text-soft);margin-top:2px">Ciudad de La Punta, San Luis</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Categorías -->
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-heading"><div class="card-heading-dot"></div>Categorías</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--pink-bg);border-radius:9px">
+          <div>
+            <div style="font-size:13px;font-weight:600">Formativas</div>
+            <div style="font-size:11px;color:var(--text-soft)">5 a 12 años</div>
+          </div>
+          <span class="badge" style="background:var(--pink-soft);color:var(--pink-dark)">Formativas</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--pink-bg);border-radius:9px">
+          <div>
+            <div style="font-size:13px;font-weight:600">7ma</div>
+            <div style="font-size:11px;color:var(--text-soft)">13 a 14 años</div>
+          </div>
+          <span class="badge" style="background:var(--pink-soft);color:var(--pink-dark)">7ma</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--pink-bg);border-radius:9px">
+          <div>
+            <div style="font-size:13px;font-weight:600">6ta</div>
+            <div style="font-size:11px;color:var(--text-soft)">15 a 16 años</div>
+          </div>
+          <span class="badge" style="background:var(--pink-soft);color:var(--pink-dark)">6ta</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--pink-bg);border-radius:9px">
+          <div>
+            <div style="font-size:13px;font-weight:600">1ra</div>
+            <div style="font-size:11px;color:var(--text-soft)">17 años en adelante</div>
+          </div>
+          <span class="badge" style="background:var(--pink-soft);color:var(--pink-dark)">1ra</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--pink-bg);border-radius:9px">
+          <div>
+            <div style="font-size:13px;font-weight:600">Mamis</div>
+            <div style="font-size:11px;color:var(--text-soft)">Adultos, sin límite de edad</div>
+          </div>
+          <span class="badge" style="background:var(--pink-soft);color:var(--pink-dark)">Mamis</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- CTA inscripción -->
+    <div style="background:var(--black);border-radius:14px;padding:22px 20px;text-align:center;margin-bottom:14px">
+      <div style="font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:var(--white);margin-bottom:6px">¿Querés sumarte?</div>
+      <div style="font-size:13px;color:rgba(255,255,255,0.55);margin-bottom:18px;line-height:1.6">La inscripción tiene un costo de $<span class="cfg-inscripcion"></span> y una bocha de hockey.<br>Podés venir unos días de prueba antes de confirmar. La cuota mensual es de $<span class="cfg-cuota"></span>.</div>
+      <button class="btn-primary" onclick="showViewById('inscripcion')" style="background:var(--pink)">Inscribirme ahora</button>
+    </div>
+
+    <!-- FAQ -->
+    <div class="card">
+      <div class="card-heading"><div class="card-heading-dot"></div>Preguntas frecuentes</div>
+      <div id="faqList"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══ JUGADORAS ══ -->
+<div id="view-player" class="view">
+  <div class="wrap">
+
+    <div id="sc-search">
+      <div class="page-header" id="pagos-header">
+        <div class="page-title">Pago de cuota</div>
+        <div class="page-sub">Ingresá el DNI para continuar</div>
+        <div style="margin-top:6px;font-size:12px;color:var(--pink-dark);background:var(--pink-bg);border:1px solid var(--pink-light);border-radius:8px;padding:8px 12px;line-height:1.5">
+          👨‍👩‍👧 Si pagás por un <strong>grupo familiar</strong>, ingresá el DNI de cualquier integrante del grupo.
+        </div>
+      </div>
+
+      <!-- Búsqueda -->
+      <div class="card" id="pagos-dni-card">
+        <div class="card-heading"><div class="card-heading-dot"></div>DNI</div>
+        <div class="search-row">
+          <input class="input-field search-input" id="dniInput" type="text" placeholder="DNI"
+            maxlength="12" onkeydown="if(event.key==='Enter')buscar()">
+          <button class="btn-search" onclick="buscar()">Buscar</button>
+        </div>
+        <div class="error-msg" id="dniError">No encontramos ese DNI. Consultá al club.</div>
+      </div>
+
+      <div id="grupoSection" style="display:none">
+
+        <!-- Integrantes -->
+        <div class="card">
+          <div class="card-heading"><div class="card-heading-dot"></div><span id="grupoTitulo">Grupo familiar</span></div>
+          <div id="grupoList"></div>
+        </div>
+
+        <!-- Mensaje al día -->
+        <div id="alDiaMsg" style="display:none">
+          <div class="card">
+            <div class="card-heading"><div class="card-heading-dot"></div>Historial de pagos</div>
+            <div id="alDiaHistorial"></div>
+            <div id="alDiaOk" style="display:none;margin-top:14px;padding:12px;background:#e6f4ee;border-radius:8px;text-align:center">
+              <div style="font-size:13px;font-weight:600;color:#2d6a4f">✅ Estás al día</div>
+              <div style="font-size:12px;color:#2d6a4f;margin-top:2px">Gracias por tu responsabilidad 💪</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Meses adeudados -->
+        <div class="cuota-block" id="payOpts" style="display:none">
+          <div class="cuota-heading"><div class="card-heading-dot"></div>Mes a pagar <span style="font-size:11px;font-weight:400;color:var(--text-soft);margin-left:4px">— tocá para deseleccionar</span></div>
+          <div id="mesesList" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:4px"></div>
+          <div class="recargo-note" id="recargoNote" style="display:none">
+            <span>⚠️</span>
+            <span>Se aplicará un recargo por pago fuera de término.</span>
+          </div>
+        </div>
+
+        <!-- Total -->
+        <div class="total-box" id="totalBox">
+          <div class="total-box-label">Detalle</div>
+          <div class="total-lines" id="totalLines"></div>
+          <div class="tl-sep" style="margin:10px 0 8px"></div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline">
+            <span style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-soft)">Total</span>
+            <span class="total-box-amount" id="totalAmt" style="margin-bottom:0"></span>
+          </div>
+        </div>
+
+        <!-- Historial compacto (colapsable) -->
+        <div id="historialWrap" style="display:none;margin-bottom:12px">
+          <button onclick="toggleHistorial()" style="background:none;border:none;width:100%;text-align:left;font-family:'Inter',sans-serif;font-size:12px;color:var(--text-soft);cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:8px 2px">
+            <span>Ver pagos anteriores</span>
+            <span id="historialIcon" style="font-size:10px">▼</span>
+          </button>
+          <div id="historialBody" style="display:none;background:var(--white);border:1px solid var(--border);border-radius:10px;overflow:hidden">
+            <div id="historialRows"></div>
+          </div>
+        </div>
+
+        <!-- Sticky pay bar -->
+        <div id="stickyBar" style="display:none;position:fixed;bottom:0;left:0;right:0;padding:12px 16px 20px;background:var(--bg);border-top:1px solid var(--border);z-index:50">
+          <button class="btn-primary" id="btnPagar" onclick="pagar()" disabled>
+            Pagar con <span class="mp-logo">MP</span> — <span id="btnMonto"></span>
+          </button>
+          <div class="mp-note" style="margin-top:7px">🔒 Procesado de forma segura por Mercado Pago</div>
+        </div>
+        <div style="height:80px"></div><!-- spacer para el sticky bar -->
+      </div>
+    </div>
+
+    <!-- Éxito -->
+    <div id="sc-exito" style="display:none">
+      <div class="card">
+        <div class="success-wrap">
+          <div class="success-icon">✅</div>
+          <div class="success-title">Pago registrado</div>
+          <p class="success-sub" id="exitoMsg"></p>
+          <div style="margin-top:22px">
+            <button class="btn-primary" onclick="reset()">Realizar otro pago</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══ ADMIN ══ -->
+<div id="view-admin" class="view">
+  <div id="admin-login" class="login-wrap">
+    <div class="login-card">
+      <div class="login-logo">🏑</div>
+      <h2>Acceso restringido</h2>
+      <p>Esta sección es solo para el cuerpo técnico del club</p>
+      <input type="password" class="login-input" id="adminPass" placeholder="Contraseña"
+        onkeydown="if(event.key==='Enter')checkAdmin()">
+      <button class="btn-primary" onclick="checkAdmin()">Ingresar</button>
+    </div>
+  </div>
+
+  <div id="admin-panel" class="admin-wrap" style="display:none">
+    <div class="admin-hdr">
+      <div><div class="admin-title">Panel</div></div>
+      <div style="display:flex;gap:8px">
+        <button class="export-btn">📥 Exportar</button>
+        <button class="btn-ghost" onclick="logoutAdmin()">Salir</button>
+      </div>
+    </div>
+    <div class="admin-tabs">
+      <button class="admin-tab active" id="atab-pagos" onclick="switchAdminTab('pagos')">💰 Pagos</button>
+      <button class="admin-tab" id="atab-jugadoras" onclick="switchAdminTab('jugadoras')">👥 Integrantes</button>
+    </div>
+    <div id="admin-pagos-section">
+    <!-- Resumen compacto -->
+    <div style="margin-bottom:16px">
+
+      <!-- Box cuotas -->
+      <div style="background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:var(--shadow);margin-bottom:10px">
+
+        <!-- Header row -->
+        <div style="padding:13px 16px 8px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border)">
+          <span style="font-family:'Playfair Display',serif;font-size:14px;font-weight:700;color:var(--black)">Cuotas</span>
+          <span style="font-size:11px;color:var(--text-soft);background:var(--pink-bg);padding:2px 9px;border-radius:20px;border:1px solid var(--border)" id="statMesLabel">Abril 2025</span>
+        </div>
+
+        <!-- Progress bar -->
+        <div style="padding:10px 16px 0">
+          <div style="height:5px;background:var(--pink-soft);border-radius:20px;overflow:hidden">
+            <div id="progressBar" style="height:100%;background:linear-gradient(90deg,#2d6a4f,#52b788);border-radius:20px;transition:width 0.5s ease;width:0%"></div>
+          </div>
+        </div>
+
+        <!-- Two stat cols -->
+        <div style="display:grid;grid-template-columns:1fr 1fr">
+          <div style="padding:10px 16px 14px;border-right:1px solid var(--border)">
+            <div style="font-size:10px;font-weight:600;color:var(--text-soft);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:6px">✅ Pagas</div>
+            <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:4px;margin-bottom:5px">
+              <span style="font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:#2d6a4f;line-height:1" id="statPagadas">—</span>
+              <span style="font-size:20px;font-weight:300;color:#ccc;line-height:1.4">/</span>
+              <span style="font-family:'Playfair Display',serif;font-size:16px;font-weight:600;color:#bbb;line-height:1.6" id="statPagadasTotal">—</span>
+              <span style="font-size:12px;font-weight:700;color:#2d6a4f;margin-left:auto;padding:2px 7px;background:#e6f4ee;border-radius:20px;line-height:1.6" id="statPagadasPct">—</span>
+            </div>
+            <div style="font-size:13px;font-weight:600;color:#2d6a4f" id="statRecaudado">—</div>
+          </div>
+          <div style="padding:10px 16px 14px">
+            <div style="font-size:10px;font-weight:600;color:var(--text-soft);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:6px">⏳ Pendientes</div>
+            <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:4px;margin-bottom:5px">
+              <span style="font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:#a07000;line-height:1" id="statPendientes">—</span>
+              <span style="font-size:20px;font-weight:300;color:#ccc;line-height:1.4">/</span>
+              <span style="font-family:'Playfair Display',serif;font-size:16px;font-weight:600;color:#bbb;line-height:1.6" id="statPendientesTotal">—</span>
+              <span style="font-size:12px;font-weight:700;color:#a07000;margin-left:auto;padding:2px 7px;background:#fff8e1;border-radius:20px;line-height:1.6" id="statPendientesPct">—</span>
+            </div>
+            <div style="font-size:13px;font-weight:600;color:var(--red)" id="statDebe">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Otros -->
+      <div style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:11px 14px;box-shadow:var(--shadow);display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div style="font-size:10px;color:var(--text-soft);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:2px">➕ Otros ingresos</div>
+          <div style="font-size:11px;color:var(--text-soft)">Recargos · Inscripciones</div>
+        </div>
+        <div style="font-size:12px;font-weight:500;color:#999" id="statOtros">—</div>
+      </div>
+    </div>
+
+    <div class="filters">
+      <input class="f-select" id="filterIntegrante" type="text" placeholder="Buscar por nombre…"
+        oninput="renderAdminTable()" style="font-family:'Inter',sans-serif;cursor:text;min-width:160px">
+      <select class="f-select" id="filterMes" onchange="renderAdminTable()">
+        <option value="">Todos los meses</option>
+        <option value="Abr 2025" selected>Abril 2025</option>
+        <option value="Mar 2025">Marzo 2025</option>
+      </select>
+      <select class="f-select" id="filterCat" onchange="renderAdminTable()">
+        <option value="">Todas las categorías</option>
+        <option value="1ra">1ra</option>
+        <option value="3ra">3ra</option>
+        <option value="5ta">5ta</option>
+        <option value="7ma">7ma</option>
+        <option value="Formativas">Formativas</option>
+      </select>
+      <select class="f-select" id="filterEstado" onchange="renderAdminTable()">
+        <option value="">Todos los estados</option>
+        <option value="paid">Pagado</option>
+        <option value="pending">Pendiente</option>
+        <option value="na">No aplica</option>
+      </select>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Integrante</th><th>Mes</th><th style="white-space:nowrap">Estado</th><th>Monto</th><th>Fecha</th><th>Categoría</th></tr></thead>
+        <tbody id="adminTable"></tbody>
+      </table>
+    </div>
+    </div><!-- /admin-pagos-section -->
+
+  <!-- ══ JUGADORAS TAB ══ -->
+  <div id="admin-jugadoras" style="display:none">
+
+    <!-- Resumen de crecimiento -->
+    <div id="crecimientoBox" style="margin-bottom:16px">
+      <div style="font-family:'Playfair Display',serif;font-size:13px;font-weight:700;color:var(--black);margin-bottom:10px">Evolución del plantel</div>
+      <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+        <table style="width:100%;border-collapse:collapse;min-width:340px;background:var(--white);border-radius:12px;overflow:hidden;box-shadow:var(--shadow);border:1px solid var(--border)">
+          <thead>
+            <tr style="background:var(--black)">
+              <th style="padding:10px 14px;text-align:left;font-family:'Inter',sans-serif;font-size:10px;font-weight:600;color:var(--pink-light);text-transform:uppercase;letter-spacing:0.8px">Mes</th>
+              <th style="padding:10px 14px;text-align:center;font-family:'Inter',sans-serif;font-size:10px;font-weight:600;color:var(--pink-light);text-transform:uppercase;letter-spacing:0.8px">Altas</th>
+              <th style="padding:10px 14px;text-align:center;font-family:'Inter',sans-serif;font-size:10px;font-weight:600;color:var(--pink-light);text-transform:uppercase;letter-spacing:0.8px">Bajas</th>
+              <th style="padding:10px 14px;text-align:center;font-family:'Inter',sans-serif;font-size:10px;font-weight:600;color:var(--pink-light);text-transform:uppercase;letter-spacing:0.8px">Total activos</th>
+            </tr>
+          </thead>
+          <tbody id="crecimientoTable"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="filters">
+      <input class="f-select" id="filterIntegranteNombre" type="text" placeholder="Buscar por nombre…"
+        oninput="renderIntegrantesTable()" style="font-family:'Inter',sans-serif;cursor:text;min-width:160px">
+      <select class="f-select" id="filterIntegranteCat" onchange="renderIntegrantesTable()">
+        <option value="">Todas las categorías</option>
+        <option value="1ra">1ra</option>
+        <option value="6ta">6ta</option>
+        <option value="7ma">7ma</option>
+        <option value="Formativas">Formativas</option>
+        <option value="Mamis">Mamis</option>
+      </select>
+      <select class="f-select" id="filterIntegranteEstado" onchange="renderIntegrantesTable()">
+        <option value="">Todos</option>
+        <option value="activa">Activo/a</option>
+        <option value="baja">Baja</option>
+        <option value="pendiente">Pendiente</option>
+      </select>
+    </div>
+    <div style="font-size:12px;color:var(--text-soft);margin-bottom:10px">
+      Total: <strong id="jugadorasCount">—</strong> integrantes registrados
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th>Nombre completo</th>
+          <th>Categoría</th>
+          <th style="white-space:nowrap">Inscripción</th>
+          <th style="white-space:nowrap">Activación</th>
+          <th style="white-space:nowrap">Baja</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr></thead>
+        <tbody id="jugadorasTable"></tbody>
+      </table>
+    </div>
+  </div><!-- /admin-jugadoras -->
+  </div><!-- /admin-panel -->
+</div><!-- /view-admin -->
+
+<!-- ══ INSCRIPCIÓN ══ -->
+<div id="view-inscripcion" class="view">
+  <div class="wrap">
+    <div id="sc-form">
+      <div class="page-header">
+        <div class="page-title">Inscripción 🏑</div>
+        <div class="page-sub">Completá el formulario para unirte al club</div>
+      </div>
+
+      <div class="card">
+        <div class="card-heading"><div class="card-heading-dot"></div>Datos del integrante</div>
+
+        <div style="margin-bottom:12px">
+          <label class="form-label">Apellido *</label>
+          <input class="input-field" id="f-apellido" type="text" placeholder="Apellido" autocomplete="family-name">
+        </div>
+
+        <div style="margin-bottom:12px">
+          <label class="form-label">Nombre/s *</label>
+          <input class="input-field" id="f-nombre" type="text" placeholder="Nombre/s" autocomplete="given-name">
+        </div>
+
+        <div style="margin-bottom:12px">
+          <label class="form-label">DNI *</label>
+          <input class="input-field" id="f-dni" type="text" placeholder="Ej: 12345678" maxlength="12" inputmode="numeric">
+          <div class="error-msg" id="f-dni-error">DNI inválido. Debe tener entre 7 y 8 dígitos.</div>
+        </div>
+
+        <div style="margin-bottom:12px">
+          <label class="form-label">Categoría *</label>
+          <select class="input-field" id="f-cat" style="cursor:pointer">
+            <option value="">Seleccioná una categoría</option>
+            <option value="1ra">1ra</option>
+            <option value="6ta">6ta (15 a 16 años)</option>
+            <option value="7ma">7ma (13 a 14 años)</option>
+            <option value="Formativas">Formativas (5 a 12 años)</option>
+            <option value="Mamis">Mamis</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="form-label">Teléfono de contacto *</label>
+          <input class="input-field" id="f-tel" type="tel" placeholder="Ej: 2664123456" inputmode="tel" autocomplete="tel">
+        </div>
+      </div>
+
+      <div class="card" id="f-tutor-card">
+        <div class="card-heading"><div class="card-heading-dot"></div>Tutor/a</div>
+        <div style="font-size:12px;color:var(--text-soft);margin-bottom:14px;line-height:1.5">Para integrantes menores de edad</div>
+
+        <div style="margin-bottom:12px">
+          <label class="form-label">Apellido</label>
+          <input class="input-field" id="f-tutor-apellido" type="text" placeholder="Apellido">
+        </div>
+
+        <div style="margin-bottom:12px">
+          <label class="form-label">Nombre/s</label>
+          <input class="input-field" id="f-tutor-nombre" type="text" placeholder="Nombre/s">
+        </div>
+
+        <div style="margin-bottom:12px">
+          <label class="form-label">DNI del responsable</label>
+          <input class="input-field" id="f-tutor-dni" type="text" placeholder="Ej: 12345678" maxlength="12" inputmode="numeric">
+          <div class="error-msg" id="f-tutor-dni-error">DNI inválido.</div>
+        </div>
+
+        <div>
+          <label class="form-label">Teléfono</label>
+          <input class="input-field" id="f-tutor-tel" type="tel" placeholder="2664123456" inputmode="tel">
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-heading"><div class="card-heading-dot"></div>Grupo familiar <span style="font-size:11px;font-weight:400;color:var(--text-soft);margin-left:4px">— opcional</span></div>
+        <div style="font-size:12px;color:var(--text-soft);margin-bottom:12px;line-height:1.5">Si esta persona pertenece a un grupo familiar ya inscripto, ingresá el DNI de uno de sus integrantes.</div>
+
+        <div style="margin-bottom:10px">
+          <label class="form-label">DNI de integrante del grupo</label>
+          <div style="display:flex;gap:8px">
+            <input class="input-field search-input" id="f-grupo-dni" type="text" placeholder="DNI de un integrante del grupo" maxlength="12"
+              oninput="buscarGrupoDNI()">
+          </div>
+          <div class="error-msg" id="f-grupo-error">No encontramos ese DNI en el registro.</div>
+          <div id="f-grupo-result" style="display:none;margin-top:8px;padding:10px 12px;background:var(--pink-bg);border:1px solid var(--pink-light);border-radius:8px;font-size:13px">
+            <div style="font-weight:600;color:var(--pink-dark)" id="f-grupo-nombre">—</div>
+            <div style="font-size:11px;color:var(--text-soft);margin-top:2px" id="f-grupo-cat">—</div>
+          </div>
+        </div>
+
+        <div id="f-relacion-wrap" style="display:none">
+          <label class="form-label">Relación con el integrante</label>
+          <select class="input-field" id="f-relacion" style="cursor:pointer">
+            <option value="">Seleccioná la relación</option>
+            <option value="hermana/o">Hermana/o</option>
+            <option value="hija/o">Hija/o</option>
+            <option value="madre/padre">Madre / Padre</option>
+            <option value="prima/o">Prima/o</option>
+            <option value="otra">Otra relación familiar</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="f-error-global" class="error-msg" style="margin-bottom:10px;font-size:13px"></div>
+
+      <button class="btn-primary" onclick="submitInscripcion()">Enviar inscripción</button>
+      <div class="mp-note" style="margin-top:8px">Los datos serán revisados por el club antes de la activación</div>
+    </div>
+
+    <!-- Éxito inscripción -->
+    <div id="sc-form-exito" style="display:none">
+      <div class="card">
+        <div class="success-wrap">
+          <div class="success-icon">🏑</div>
+          <div class="success-title">¡Bienvenido/a al club!</div>
+          <p class="success-sub" id="form-exito-msg"></p>
+          <div style="margin-top:24px;display:flex;flex-direction:column;gap:10px">
+            <button class="btn-primary" id="btnIrAPagar" onclick="">
+              Pagar inscripción y cuota →
+            </button>
+            <button class="btn-ghost" style="width:100%" onclick="irDespues()">
+              Pagar después
+            </button>
+            <button style="background:none;border:none;color:var(--pink-dark);font-size:13px;text-decoration:underline;cursor:pointer;margin-top:4px;font-family:'Inter',sans-serif" onclick="resetForm()">
+              Comenzar otra inscripción
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+const DB = {
+  // Individual - al día
+  '12345678': [{ id:'p1', nombre:'Arriola, Renata', cat:'7ma' }],
+  // Individual - debe 2 meses
+  '11111111': [{ id:'p6', nombre:'Ortiz, Olivia', cat:'Formativas' }],
+  // Familiar 2 - debe meses distintos
+  '23456789': [
+    { id:'p2', nombre:'Conde, Alma',    cat:'7ma' },
+    { id:'p3', nombre:'Conde, Nahiara', cat:'7ma' }
+  ],
+  '34567890': [
+    { id:'p2', nombre:'Conde, Alma',    cat:'7ma' },
+    { id:'p3', nombre:'Conde, Nahiara', cat:'7ma' }
+  ],
+  // Familiar 3
+  '55555555': [
+    { id:'p7', nombre:'Sosa, Valentina',  cat:'5ta' },
+    { id:'p8', nombre:'Sosa, Milagros',   cat:'3ra' },
+    { id:'p9', nombre:'Sosa, Florencia',  cat:'7ma' }
+  ],
+  // Familiar 4
+  '66666666': [
+    { id:'p10', nombre:'Romero, Julieta',   cat:'1ra' },
+    { id:'p11', nombre:'Romero, Camila',    cat:'3ra' },
+    { id:'p12', nombre:'Romero, Antonella', cat:'5ta' },
+    { id:'p13', nombre:'Romero, Luciana',   cat:'7ma' }
+  ],
+  // Nuevo/a integrante - recién inscripto/a, debe inscripción + Abril
+  '20000001': [{ id:'pNueva', nombre:'Martínez, Sofía', cat:'7ma', inscripcionMes: 3 }],
+};
+const PAGADOS = {
+  p1:  [{m:0,f:'05/01'},{m:1,f:'03/02'},{m:2,f:'07/03'},{m:3,f:'04/04'}], // Arriola: al día
+  p2:  [{m:0,f:'05/01'},{m:1,f:'03/02'},{m:2,f:'07/03'}],
+  p3:  [{m:0,f:'05/01'},{m:1,f:'03/02'}],
+  p4:  [{m:0,f:'05/01'},{m:1,f:'03/02'},{m:2,f:'07/03'}],
+  p5:  [{m:0,f:'05/01'},{m:1,f:'03/02'}],
+  p6:  [{m:0,f:'06/01'},{m:1,f:'04/02'},{m:2,f:'08/03'}],
+  p7:  [{m:0,f:'05/01'},{m:1,f:'03/02'},{m:2,f:'07/03'}],
+  p8:  [{m:0,f:'05/01'},{m:1,f:'03/02'}],
+  p9:  [{m:0,f:'05/01'},{m:1,f:'03/02'},{m:2,f:'07/03'},{m:3,f:'04/04'}], // al día
+  p10: [{m:0,f:'05/01'},{m:1,f:'03/02'},{m:2,f:'07/03'}],
+  p11: [{m:0,f:'05/01'},{m:1,f:'03/02'},{m:2,f:'07/03'}],
+  p12: [{m:0,f:'05/01'}],
+  p13: [{m:0,f:'05/01'},{m:1,f:'03/02'},{m:2,f:'07/03'},{m:3,f:'04/04'}], // al día
+  pNueva: [],
+  p14: [{m:0,f:'06/01'}],
+};
+const MESES    = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const MESES_CORTO = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+const MES_ACT  = 3;  // Abril (0-indexed)
+const HOY_DIA  = 15; // simulado - en producción: new Date().getDate()
+
+// -- CONFIGURACIÓN DE MONTOS -- editar aquí para actualizar todo el sitio
+const CONFIG = {
+  INSCRIPCION:   5000,  // Pago único al inscribirse
+  RECARGO:       2000,  // Recargo por pago fuera de término (después del día 10)
+  CUOTA_ENE_MAR: 10000, // Cuota regular Enero-Marzo
+  CUOTA_ABR_JUL: 15000, // Cuota regular Abril-Julio
+  CUOTA_AGO_DIC: 18000, // Cuota regular Agosto-Diciembre
+  CUOTA_FAMILIAR_DESC: 0.5, // % de descuento para 2do familiar y siguientes (50%)
+  DIA_LIMITE:    10,    // Día límite para pagar sin recargo
+};
+
+const RECARGO    = CONFIG.RECARGO;
+const INSCRIPCION = CONFIG.INSCRIPCION;
+
+const FAQ = [
+  {
+    q: '¿Cuánto cuesta inscribirse?',
+    a: `La inscripción tiene un costo de $${CONFIG.INSCRIPCION.toLocaleString('es-AR')}. Una vez que confirmás tu lugar, debés entregar una bocha de hockey a tu profe. Antes de eso podés venir unos días de prueba sin costo.`
+  },
+  {
+    q: '¿Cuánto es la cuota mensual?',
+    a: `La cuota varía según el período del año. Actualmente es de $${CONFIG.CUOTA_ABR_JUL.toLocaleString('es-AR')} por mes. Si pagás después del día ${CONFIG.DIA_LIMITE} se aplica un recargo de $${CONFIG.RECARGO.toLocaleString('es-AR')}.`
+  },
+  {
+    q: '¿Hay descuento por grupo familiar?',
+    a: `Sí. El primer integrante abona la cuota completa. A partir del segundo integrante del mismo grupo familiar se paga el 50% de la cuota.`
+  },
+  {
+    q: '¿Dónde entrenan?',
+    a: 'En el Polideportivo Municipal de la Ciudad de La Punta, San Luis.'
+  },
+  {
+    q: '¿Cuándo son los entrenamientos?',
+    a: 'Los martes y jueves de 20:00 a 22:00 hs.'
+  },
+  {
+    q: '¿Necesito experiencia previa?',
+    a: 'No, el club está abierto a todos los niveles. Para las categorías formativas los profes acompañan el aprendizaje desde cero.'
+  },
+  {
+    q: '¿Qué necesito para empezar?',
+    a: 'Solo ropa cómoda y botines (o zapatillas al principio). La bocha la llevás cuando confirmás tu inscripción. El resto lo vas consiguiendo de a poco.'
+  },
+  {
+    q: '¿Cómo me inscribo?',
+    a: 'Completá el formulario de inscripción en este mismo sitio, en la sección "Inscripción". Luego podés abonar la inscripción y la primera cuota desde la sección "Pagos".'
+  },
+  {
+    q: '¿Hasta qué edad se puede jugar?',
+    a: 'No hay límite de edad. La categoría Mamis está pensada para adultos de cualquier edad.'
+  },
+];
+
+function showViewById(v) {
+  document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.nav-menu-item').forEach(el => el.classList.remove('active'));
+  document.getElementById('view-' + v).classList.add('active');
+  const menuBtn = document.getElementById('menu' + v.charAt(0).toUpperCase() + v.slice(1));
+  if (menuBtn) menuBtn.classList.add('active');
+  window.scrollTo({ top:0, behavior:'smooth' });
+}
+
+function renderFAQ() {
+  let openIdx = -1;
+  document.getElementById('faqList').innerHTML = FAQ.map((item, i) => `
+    <div style="border-bottom:1px solid var(--border)">
+      <button onclick="toggleFAQ(${i})" style="width:100%;text-align:left;background:none;border:none;padding:13px 0;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:12px;font-family:'Inter',sans-serif">
+        <span style="font-size:13px;font-weight:600;color:var(--black);line-height:1.4">${item.q}</span>
+        <span id="faq-icon-${i}" style="font-size:11px;color:var(--text-soft);flex-shrink:0">▼</span>
+      </button>
+      <div id="faq-body-${i}" style="display:none;font-size:13px;color:var(--text-soft);line-height:1.6;padding-bottom:13px">${item.a}</div>
+    </div>`).join('');
+}
+
+function toggleFAQ(i) {
+  const body = document.getElementById('faq-body-' + i);
+  const icon = document.getElementById('faq-icon-' + i);
+  const open = body.style.display === 'block';
+  body.style.display = open ? 'none' : 'block';
+  icon.textContent   = open ? '▼' : '▲';
+}
+
+function initHome() {
+  document.querySelectorAll('.cfg-inscripcion').forEach(el => el.textContent = CONFIG.INSCRIPCION.toLocaleString('es-AR'));
+  document.querySelectorAll('.cfg-cuota').forEach(el => el.textContent = CONFIG.CUOTA_ABR_JUL.toLocaleString('es-AR'));
+  renderFAQ();
+}
+
+function getPrecio(mes) {
+  if (mes <= 2) return CONFIG.CUOTA_ENE_MAR;
+  if (mes <= 6) return CONFIG.CUOTA_ABR_JUL;
+  return CONFIG.CUOTA_AGO_DIC;
+}
+
+
+
+function tieneRecargo() { return HOY_DIA > CONFIG.DIA_LIMITE; }
+
+// Meses que debe el integrante = desde su mes de inscripción hasta MES_ACT, no pagados
+function getMesesDeuda(pid) {
+  const pagados = PAGADOS[pid] || [];
+  const integrante = Object.values(DB).flat().find(p => p.id === pid);
+  const desde = integrante?.inscripcionMes ?? 0;
+  const deuda = [];
+  for (let i = desde; i <= MES_ACT; i++) {
+    if (!pagados.some(p => p.m === i)) deuda.push(i);
+  }
+  return deuda;
+}
+
+// ¿Es el primer pago? (ningún mes pagado aún)
+function esPrimerPago(pid) {
+  return (PAGADOS[pid] || []).length === 0;
+}
+
+let grupo = [], selIds = new Set(), tipoAuto = 'regular';
+// mesesSel: Set de índices de mes seleccionados para pagar (común al grupo)
+let mesesSel = new Set();
+
+// Ir a pago desde inscripción
+function irAPagar(dni) {
+  document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.nav-menu-item').forEach(el => el.classList.remove('active'));
+  document.getElementById('view-player').classList.add('active');
+  document.getElementById('menuPlayer').classList.add('active');
+  // Ocultar header y card de DNI - ya viene resuelto
+  document.getElementById('pagos-header').style.display = 'none';
+  document.getElementById('pagos-dni-card').style.display = 'none';
+  document.getElementById('dniInput').value = dni;
+  buscar();
+  window.scrollTo({ top:0, behavior:'smooth' });
+}
+
+function irDespues() {
+  resetForm();
+  document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.nav-menu-item').forEach(el => el.classList.remove('active'));
+  document.getElementById('view-player').classList.add('active');
+  document.getElementById('menuPlayer').classList.add('active');
+  // Restaurar header y card de DNI por si vuelven luego
+  document.getElementById('pagos-header').style.display = '';
+  document.getElementById('pagos-dni-card').style.display = '';
+}
+
+function normalizarDNI(raw) {
+  // Quitar puntos, espacios, guiones -> solo dígitos
+  return raw.replace(/[\.\s\-]/g, '');
+}
+
+function buscar() {
+  const raw = document.getElementById('dniInput').value.trim();
+  const q   = normalizarDNI(raw);
+  const err = document.getElementById('dniError');
+  err.style.display = 'none';
+  document.getElementById('dniInput').classList.remove('error');
+
+  if (q.length < 8) {
+    document.getElementById('dniInput').classList.add('error');
+    err.textContent = 'El DNI debe tener al menos 8 dígitos.';
+    err.style.display = 'block';
+    return;
+  }
+
+  const g = DB[q];
+  if (!g) {
+    document.getElementById('dniInput').classList.add('error');
+    err.textContent = 'No encontramos ese DNI. Consultá al club.';
+    err.style.display = 'block';
+    document.getElementById('grupoSection').style.display = 'none';
+    return;
+  }
+
+  // Normalizar lo que queda en el input
+  document.getElementById('dniInput').value = q;
+  try { localStorage.setItem('lomas_dni', q); } catch(e) {}
+
+  grupo = g;
+  tipoAuto = grupo.length > 1 ? 'familiar' : 'regular';
+
+  // Título: género según nombre (heurística simple por terminación)
+  document.getElementById('grupoTitulo').textContent =
+    grupo.length > 1 ? 'Grupo familiar' : 'Integrante';
+
+  selIds = new Set(grupo.map(p => p.id));
+
+  // Meses adeudados del grupo (unión)
+  const todosMeses = new Set();
+  grupo.forEach(p => getMesesDeuda(p.id).forEach(m => todosMeses.add(m)));
+  mesesSel = new Set(todosMeses);
+
+  renderGrupo();
+  renderMeses(todosMeses);
+
+  const alDia = todosMeses.size === 0;
+  document.getElementById('alDiaMsg').style.display  = alDia ? 'block' : 'none';
+  document.getElementById('payOpts').style.display   = alDia ? 'none' : 'none';
+  document.getElementById('totalBox').style.display  = 'none';
+  document.getElementById('stickyBar').style.display = 'none';
+
+  if (alDia) {
+    document.getElementById('historialWrap').style.display = 'none';
+    // Construir historial de todos los meses pagados del grupo
+    const allPagados = [];
+    grupo.forEach(p => {
+      const pagados = PAGADOS[p.id] || [];
+      pagados.forEach(entry => {
+        // Evitar duplicar meses si es grupo familiar
+        if (!allPagados.some(e => e.m === entry.m)) {
+          allPagados.push(entry);
+        }
+      });
+    });
+    allPagados.sort((a,b) => a.m - b.m);
+
+    const todoPago = allPagados.length > 0 &&
+      allPagados[allPagados.length-1].m >= MES_ACT;
+
+    document.getElementById('alDiaHistorial').innerHTML = allPagados.map(e => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border)">
+        <span style="font-size:14px;font-weight:500">${MESES[e.m]}</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:12px;color:var(--text-soft)">${e.f}</span>
+          <span style="font-size:11px;font-weight:600;color:#2d6a4f;background:#e6f4ee;padding:2px 8px;border-radius:20px">✅ Pago</span>
+        </div>
+      </div>`).join('') + '<div style="height:1px"></div>';
+
+    document.getElementById('alDiaOk').style.display = todoPago ? 'block' : 'none';
+  } else {
+    // Historial compacto para quien tiene deuda
+    const allPagados = [];
+    grupo.forEach(p => {
+      (PAGADOS[p.id] || []).forEach(entry => {
+        if (!allPagados.some(e => e.m === entry.m)) allPagados.push(entry);
+      });
+    });
+    allPagados.sort((a,b) => b.m - a.m);
+    if (allPagados.length > 0) {
+      document.getElementById('historialWrap').style.display = 'block';
+      document.getElementById('historialRows').innerHTML = allPagados.map(e => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 14px;border-bottom:1px solid var(--border)">
+          <span style="font-size:13px;color:var(--text-soft)">${MESES[e.m]}</span>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:11px;color:var(--text-soft)">${e.f}</span>
+            <span style="font-size:11px;font-weight:600;color:#2d6a4f;background:#e6f4ee;padding:2px 8px;border-radius:20px">✅ Pago</span>
+          </div>
+        </div>`).join('') + '<div style="height:1px"></div>';
+    } else {
+      document.getElementById('historialWrap').style.display = 'none';
+    }
+  }
+
+  document.getElementById('grupoSection').style.display = 'block';
+  if (!alDia) recalc();
+}
+
+function toggleHistorial() {
+  const body = document.getElementById('historialBody');
+  const icon = document.getElementById('historialIcon');
+  const open = body.style.display === 'block';
+  body.style.display = open ? 'none' : 'block';
+  icon.textContent   = open ? '▼' : '▲';
+}
+
+function renderMeses(todosMeses) {
+  const sorted     = [...todosMeses].sort((a,b) => a-b);
+  const masAntiguo = sorted[0];
+
+  document.getElementById('mesesList').innerHTML = sorted.map(m => {
+    const sel      = mesesSel.has(m);
+    const bloqueado = m === masAntiguo;
+    const vencido  = m < MES_ACT || (m === MES_ACT && HOY_DIA > 10);
+    return `
+      <div class="mes-chip ${sel?'selected':''} ${vencido?'vencido':''} ${bloqueado?'locked':''}"
+           onclick="${bloqueado ? '' : `toggleMes(${m})`}"
+           style="${bloqueado ? 'cursor:default;opacity:0.85' : ''}">
+        ${sel ? '<span class="chip-check">✓</span>' : ''}
+        ${MESES[m]}${vencido ? ' <span style="font-size:10px;opacity:0.7">(vencido)</span>' : ''}
+        ${bloqueado ? ' <span style="font-size:10px;opacity:0.5">·&nbsp;mín.</span>' : ''}
+      </div>`;
+  }).join('');
+}
+
+function toggleMes(m) {
+  const todosMeses = new Set();
+  grupo.forEach(p => getMesesDeuda(p.id).forEach(x => todosMeses.add(x)));
+  const sorted     = [...todosMeses].sort((a,b) => a-b);
+  const masAntiguo = sorted[0];
+
+  // No se puede deseleccionar el más antiguo ni dejar 0 seleccionados
+  if (m === masAntiguo) return;
+  if (mesesSel.has(m) && mesesSel.size <= 1) return;
+
+  mesesSel.has(m) ? mesesSel.delete(m) : mesesSel.add(m);
+  renderMeses(todosMeses);
+  recalc();
+}
+
+function iniciales(nombre) {
+  const partes = nombre.split(',');
+  const apellido = partes[0].trim();
+  const nombres  = (partes[1] || '').trim().split(' ');
+  return (apellido[0] + (nombres[0]?.[0] || '')).toUpperCase();
+}
+
+function renderGrupo() {
+  // En grupo familiar, todos tienen la misma deuda (unión) -> nunca mostramos "al día" individual
+  const esFamiliar = grupo.length > 1;
+  document.getElementById('grupoList').innerHTML = grupo.map(p => {
+    const ini = iniciales(p.nombre);
+    return `
+      <div class="player-row selected" style="cursor:default">
+        <div class="check">✓</div>
+        <div class="avatar">${ini}</div>
+        <div>
+          <div class="p-name">${p.nombre}</div>
+          <div class="p-cat">Categoría ${p.cat}</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function toggle(id) {
+  selIds.has(id) ? selIds.delete(id) : selIds.add(id);
+  renderGrupo(); recalc();
+}
+
+function calcMesTotal(mes, tipo, count, recargo) {
+  const base  = getPrecio(mes);
+  const mitad = base / 2;
+  if (tipo === 'familiar' && count >= 2) {
+    return base + mitad * (count - 1) + recargo * count;
+  }
+  return base * count + recargo * count;
+}
+
+function recalc() {
+  const count    = selIds.size;
+  const hayRec   = tieneRecargo();
+  const mesesArr = [...mesesSel].sort((a,b) => a-b);
+
+  document.getElementById('payOpts').style.display = count > 0 ? 'block' : 'none';
+  document.getElementById('recargoNote').style.display = hayRec ? 'flex' : 'none';
+
+  if (count === 0 || mesesArr.length === 0) {
+    document.getElementById('totalBox').style.display = 'none';
+    document.getElementById('stickyBar').style.display = 'none';
+    document.getElementById('btnPagar').disabled = true;
+    return;
+  }
+
+  const recargo = hayRec ? RECARGO : 0;
+  // ¿Algún integrante del grupo paga por primera vez?
+  const primerPago = [...selIds].some(id => esPrimerPago(id));
+  const inscTotal  = primerPago ? INSCRIPCION * [...selIds].filter(id => esPrimerPago(id)).length : 0;
+  let grandTotal = inscTotal;
+  let lines = '';
+
+  // Inscripción al inicio si aplica
+  if (primerPago) {
+    const nPrimeras = [...selIds].filter(id => esPrimerPago(id)).length;
+    lines += `
+      <div class="total-line" style="margin-bottom:3px">
+        <span class="tl-label" style="font-weight:700;color:var(--pink-dark)">Inscripción</span>
+        <span class="tl-val" style="color:var(--text-soft);font-size:11px">$${inscTotal.toLocaleString('es-AR')}</span>
+      </div>
+      <div class="total-line">
+        <span class="tl-label">$${INSCRIPCION.toLocaleString('es-AR')}${nPrimeras > 1 ? ' × '+nPrimeras : ''}</span>
+        <span class="tl-val">$${inscTotal.toLocaleString('es-AR')}</span>
+      </div>
+      <div class="tl-sep" style="margin:6px 0 4px"></div>`;
+  }
+
+  mesesArr.forEach((mes, idx) => {
+    const base  = getPrecio(mes);
+    const mitad = base / 2;
+    const mesTotal = calcMesTotal(mes, tipoAuto, count, recargo);
+    grandTotal += mesTotal;
+
+    if (idx > 0) lines += `<div class="tl-sep" style="margin:6px 0 4px"></div>`;
+    lines += `
+      <div class="total-line" style="margin-bottom:3px">
+        <span class="tl-label" style="font-weight:700;color:var(--pink-dark)">${MESES[mes]}</span>
+        <span class="tl-val" style="color:var(--text-soft);font-size:11px">$${mesTotal.toLocaleString('es-AR')}</span>
+      </div>`;
+
+    if (tipoAuto === 'familiar' && count >= 2) {
+      lines += `
+        <div class="total-line">
+          <span class="tl-label">1er integrante</span>
+          <span class="tl-val">$${base.toLocaleString('es-AR')}</span>
+        </div>`;
+      for (let i = 1; i < count; i++) lines += `
+        <div class="total-line">
+          <span class="tl-label">${i+1}º integrante</span>
+          <span class="tl-val">$${mitad.toLocaleString('es-AR')}</span>
+        </div>`;
+    } else {
+      lines += `
+        <div class="total-line">
+          <span class="tl-label">Cuota Regular</span>
+          <span class="tl-val">$${base.toLocaleString('es-AR')}</span>
+        </div>`;
+    }
+
+    if (hayRec) lines += `
+      <div class="total-line">
+        <span class="tl-recargo-label">Recargo${count > 1 ? ' × '+count : ''}</span>
+        <span class="tl-recargo-val">+$${(recargo*count).toLocaleString('es-AR')}</span>
+      </div>`;
+  });
+
+  document.getElementById('totalAmt').textContent = '$' + grandTotal.toLocaleString('es-AR');
+  document.getElementById('totalLines').innerHTML = lines;
+  document.getElementById('totalBox').style.display = 'block';
+  // Sticky bar
+  document.getElementById('stickyBar').style.display = 'block';
+  document.getElementById('btnMonto').textContent = '$' + grandTotal.toLocaleString('es-AR');
+  document.getElementById('btnPagar').disabled = false;
+}
+
+// URL del Apps Script desplegado — reemplazar después de crear el backend
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxpxa2YzDyRnegIRTnf6Q53NL_YsqrRbAqzqUfytmdwLTxWbCfaSSOyPNz6IS6co88CAg/exec';
+const MP_PUBLIC_KEY   = 'APP_USR-6350f7f5-f5d7-4177-877e-fb9b562cfbda';
+
+async function pagar() {
+  const jugs     = grupo.filter(p => selIds.has(p.id));
+  const mesArr   = [...mesesSel].sort((a,b) => a-b);
+  const mes      = mesArr[0]; // mes base para el tipo
+  const recargo  = tieneRecargo() ? RECARGO : 0;
+  const primer   = jugs.some(p => esPrimerPago(p.id));
+
+  // Armar desglose de items
+  const desglose = [];
+
+  if (primer) {
+    const nPrimeros = jugs.filter(p => esPrimerPago(p.id)).length;
+    desglose.push({ concepto: `Inscripcion (x${nPrimeros})`, monto: INSCRIPCION * nPrimeros });
+  }
+
+  mesArr.forEach(m => {
+    const base  = getPrecio(m);
+    const mitad = base / 2;
+    if (tipoAuto === 'familiar' && jugs.length >= 2) {
+      desglose.push({ concepto: `Cuota ${MESES[m]} - 1er integrante`, monto: base });
+      for (let i = 1; i < jugs.length; i++) {
+        desglose.push({ concepto: `Cuota ${MESES[m]} - ${i+1}o integrante`, monto: mitad });
+      }
+    } else {
+      desglose.push({ concepto: `Cuota ${MESES[m]}`, monto: base });
+    }
+    if (recargo > 0) {
+      desglose.push({ concepto: `Recargo mora ${MESES[m]} (x${jugs.length})`, monto: recargo * jugs.length });
+    }
+  });
+
+  const montoTotal = desglose.reduce((s, d) => s + d.monto, 0);
+
+  // Mostrar loading en el botón
+  const btn = document.getElementById('btnPagar');
+  const original = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = 'Procesando...';
+
+  try {
+    const payload = {
+      action:      'crear_pago',
+      pagador:     { dni: document.getElementById('dniInput').value, nombre: jugs[0].nombre },
+      integrantes: jugs.map(j => ({ id: j.id, nombre: j.nombre, cat: j.cat })),
+      meses:       mesArr.map(m => ({ mes: m, nombre: MESES[m] })),
+      tipo:        tipoAuto,
+      primerPago:  primer,
+      montoTotal,
+      desglose,
+    };
+
+    const res  = await fetch(APPS_SCRIPT_URL, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(payload),
+    });
+
+    const data = await res.json();
+
+    if (data.sandbox_init_point || data.init_point) {
+      // Redirigir al checkout de MP
+      window.location.href = data.sandbox_init_point || data.init_point;
+    } else {
+      throw new Error(data.error || 'No se recibio URL de pago');
+    }
+
+  } catch (err) {
+    btn.disabled  = false;
+    btn.innerHTML = original;
+    alert('Hubo un problema al conectar con el sistema de pagos. Intentá de nuevo.');
+    console.error(err);
+  }
+}
+
+function volver() {
+  document.getElementById('sc-resumen').style.display = 'none';
+  document.getElementById('sc-search').style.display  = 'block';
+}
+
+function reset() {
+  grupo = []; selIds = new Set();
+  document.getElementById('dniInput').value = '';
+  document.getElementById('dniInput').classList.remove('error');
+  document.getElementById('dniError').style.display    = 'none';
+  document.getElementById('pagos-header').style.display = '';
+  document.getElementById('pagos-dni-card').style.display = '';
+  document.getElementById('grupoSection').style.display = 'none';
+  document.getElementById('alDiaMsg').style.display    = 'none';
+  document.getElementById('historialWrap').style.display = 'none';
+  document.getElementById('historialBody').style.display = 'none';
+  document.getElementById('historialIcon').textContent   = '▼';
+  document.getElementById('totalBox').style.display    = 'none';
+  document.getElementById('stickyBar').style.display   = 'none';
+  document.getElementById('sc-exito').style.display    = 'none';
+  document.getElementById('sc-search').style.display   = 'block';
+  window.scrollTo({ top:0, behavior:'smooth' });
+}
+
+// -- ADMIN --
+// status: 'paid' | 'pending' | 'na'
+// recargo: monto de interés cobrado (separado de amount)
+const ADMIN_DATA = [
+  { name:'Arriola, Renata',            cat:'7ma',        month:'Abr 2025', amount:15000, recargo:2000, date:'08/04', status:'paid' },
+  { name:'Conde, Alma',                cat:'7ma',        month:'Abr 2025', amount:15000, recargo:0,    date:'05/04', status:'paid' },
+  { name:'Conde, Nahiara',             cat:'7ma',        month:'Abr 2025', amount:7500,  recargo:0,    date:'05/04', status:'paid' },
+  { name:'Ripepi, Guillermina',         cat:'1ra',        month:'Abr 2025', amount:15000, recargo:0,    date:'03/04', status:'paid' },
+  { name:'Bertero Ripepi, Francisco',  cat:'Formativas', month:'Abr 2025', amount:7500,  recargo:0,    date:'03/04', status:'paid' },
+  { name:'González, Amira',            cat:'Formativas', month:'Abr 2025', amount:15000, recargo:2000, date:'12/04', status:'paid' },
+  { name:'Ortiz, Olivia',              cat:'Formativas', month:'Abr 2025', amount:0,     recargo:0,    date:'-',     status:'pending' },
+  { name:'Hernández Cerezo, V.',        cat:'Formativas', month:'Abr 2025', amount:0,     recargo:0,    date:'-',     status:'pending' },
+  { name:'Rodríguez, Yesica',          cat:'1ra',        month:'Abr 2025', amount:0,     recargo:0,    date:'-',     status:'na' },
+  { name:'Pérez, Laura',               cat:'1ra',        month:'Abr 2025', amount:0,     recargo:0,    date:'-',     status:'na' },
+  { name:'Sosa, Valentina',            cat:'5ta',        month:'Mar 2025', amount:10000, recargo:0,    date:'07/03', status:'paid' },
+  { name:'Sosa, Milagros',             cat:'3ra',        month:'Mar 2025', amount:5000,  recargo:0,    date:'07/03', status:'paid' },
+  { name:'Romero, Julieta',            cat:'1ra',        month:'Mar 2025', amount:10000, recargo:2000, date:'14/03', status:'paid' },
+  { name:'Romero, Camila',             cat:'3ra',        month:'Mar 2025', amount:0,     recargo:0,    date:'-',     status:'pending' },
+];
+
+// Jugadores activos únicos (todos excepto 'na')
+const TOTAL_ACTIVOS = [...new Set(ADMIN_DATA.filter(r => r.status !== 'na').map(r => r.name))].length;
+
+function renderAdminTable() {
+  const fMes      = document.getElementById('filterMes').value;
+  const fCat      = document.getElementById('filterCat').value;
+  const fEstado   = document.getElementById('filterEstado').value;
+  const fIntegrante = document.getElementById('filterIntegrante').value.toLowerCase().trim();
+
+  const filtered = ADMIN_DATA.filter(r =>
+    (!fMes      || r.month  === fMes) &&
+    (!fCat      || r.cat    === fCat) &&
+    (!fEstado   || r.status === fEstado) &&
+    (!fIntegrante || r.name.toLowerCase().includes(fIntegrante))
+  );
+
+  // Cuotas: solo monto base, sin recargo, sin 'na'
+  const recaudado = filtered.filter(r => r.status === 'paid').reduce((s,r) => s + r.amount, 0);
+  // Otros: suma de recargas cobrados
+  const otros     = filtered.filter(r => r.status === 'paid').reduce((s,r) => s + r.recargo, 0);
+  // Por cobrar: pendientes (estimado por cuota base del mes)
+  const porCobrar = filtered.filter(r => r.status === 'pending').reduce((s,r) => s + getPrecio(MES_ACT), 0);
+
+  const totalConCuota = ADMIN_DATA.filter((r,i,a) =>
+    r.status !== 'na' && a.findIndex(x => x.name === r.name && x.month === r.month) === i
+  ).length; // total de integrantes que pagan (sin duplicados por nombre+mes)
+
+  const pagadasN    = filtered.filter(r => r.status === 'paid').length;
+  const pendientesN = filtered.filter(r => r.status === 'pending').length;
+  const totalN      = pagadasN + pendientesN;
+  const pctPag      = totalN > 0 ? Math.round(pagadasN / totalN * 100) : 0;
+  const pctPend     = totalN > 0 ? Math.round(pendientesN / totalN * 100) : 0;
+
+  document.getElementById('statPagadas').textContent       = pagadasN;
+  document.getElementById('statPagadasTotal').textContent  = totalN;
+  document.getElementById('statPagadasPct').textContent    = pctPag + '%';
+  document.getElementById('statRecaudado').textContent     = '$' + recaudado.toLocaleString('es-AR');
+  document.getElementById('statPendientes').textContent    = pendientesN;
+  document.getElementById('statPendientesTotal').textContent = totalN;
+  document.getElementById('statPendientesPct').textContent = pctPend + '%';
+  document.getElementById('statDebe').textContent          = '$' + porCobrar.toLocaleString('es-AR');
+  document.getElementById('statOtros').textContent         = '$' + otros.toLocaleString('es-AR');
+  document.getElementById('progressBar').style.width       = pctPag + '%';
+  const mesLabel = document.getElementById('filterMes').value || 'Todos los meses';
+  document.getElementById('statMesLabel').textContent      = mesLabel;
+
+  const statusLabel = { paid:'✅ Pago', pending:'⏳ Pendiente', na:'- No aplica' };
+  const statusBadge = { paid:'b-paid', pending:'b-pending', na:'b-na' };
+
+  document.getElementById('adminTable').innerHTML = filtered.length === 0
+    ? `<tr><td colspan="6" style="text-align:center;color:var(--text-soft);padding:24px">Sin resultados para este filtro</td></tr>`
+    : filtered.map(r => `
+      <tr>
+        <td><strong>${r.name}</strong></td>
+        <td style="white-space:nowrap;width:1px">${r.month.split(' ')[0]}</td>
+        <td style="white-space:nowrap"><span class="badge ${statusBadge[r.status]}">${statusLabel[r.status]}</span></td>
+        <td style="white-space:nowrap">${r.status === 'na' ? '-' : r.status === 'pending' ? '-' : '$' + r.amount.toLocaleString('es-AR')}${r.recargo ? ` <span style="font-size:10px;color:var(--text-soft)">+$${r.recargo.toLocaleString('es-AR')}</span>` : ''}</td>
+        <td style="white-space:nowrap">${r.date}</td>
+        <td><span class="badge" style="background:var(--pink-soft);color:var(--pink-dark);white-space:nowrap">${r.cat}</span></td>
+      </tr>`).join('');
+}
+
+function checkAdmin() {
+  if (document.getElementById('adminPass').value === '1234') {
+    document.getElementById('admin-login').style.display = 'none';
+    document.getElementById('admin-panel').style.display = 'block';
+    renderAdminTable();
+  } else {
+    document.getElementById('adminPass').style.borderColor = 'var(--red)';
+    document.getElementById('adminPass').value = '';
+    document.getElementById('adminPass').placeholder = 'Contraseña incorrecta';
+  }
+}
+
+function logoutAdmin() {
+  document.getElementById('admin-login').style.display = 'block';
+  document.getElementById('admin-panel').style.display = 'none';
+  document.getElementById('adminPass').value = '';
+  document.getElementById('adminPass').style.borderColor = '';
+  document.getElementById('adminPass').placeholder = 'Contraseña';
+}
+
+function toggleMenu() {
+  document.getElementById('navBurger').classList.toggle('open');
+  document.getElementById('navMenu').classList.toggle('open');
+}
+
+function showView(v, btn) {
+  document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.nav-menu-item').forEach(el => el.classList.remove('active'));
+  document.getElementById('view-' + v).classList.add('active');
+  btn.classList.add('active');
+  // Cerrar menú
+  document.getElementById('navBurger').classList.remove('open');
+  document.getElementById('navMenu').classList.remove('open');
+}
+
+// -- ACCIONES ADMIN --
+let _accionDni = '';
+
+function cerrarModal(id) {
+  document.getElementById(id).style.display = 'none';
+}
+
+// BAJA
+function abrirBaja(dni, nombre) {
+  _accionDni = dni;
+  document.getElementById('bajaNombre').textContent = nombre;
+  document.getElementById('bajaMotivo').value = '';
+  document.getElementById('modalBaja').style.display = 'flex';
+}
+
+function confirmarBaja() {
+  const j = JUGADORAS.find(x => x.dni === _accionDni);
+  if (!j) return;
+  const hoy = new Date().toISOString().split('T')[0];
+  j.estado    = 'baja';
+  j.fechaBaja = hoy;
+  cerrarModal('modalBaja');
+  renderIntegrantesTable();
+  renderCrecimiento();
+}
+
+// GRUPO FAMILIAR
+function abrirGrupo(dni, nombre) {
+  _accionDni = dni;
+  document.getElementById('grupoNombre').textContent = nombre;
+  document.getElementById('grupoDniInput').value = '';
+  document.getElementById('grupoDniError').style.display = 'none';
+  document.getElementById('grupoAdminResult').style.display = 'none';
+  document.getElementById('grupoRelacionWrap').style.display = 'none';
+  document.getElementById('grupoRelacion').value = '';
+  document.getElementById('btnConfirmarGrupo').disabled = true;
+  document.getElementById('modalGrupo').style.display = 'flex';
+}
+
+function buscarGrupoAdmin() {
+  const q   = normDNI(document.getElementById('grupoDniInput').value.trim());
+  const err = document.getElementById('grupoDniError');
+  const res = document.getElementById('grupoAdminResult');
+  const rel = document.getElementById('grupoRelacionWrap');
+  err.style.display = 'none';
+  res.style.display = 'none';
+  rel.style.display = 'none';
+  document.getElementById('btnConfirmarGrupo').disabled = true;
+  if (q.length < 7) return;
+  if (q === _accionDni) { err.textContent = 'No podés asociar a la misma persona.'; err.style.display = 'block'; return; }
+  const found = JUGADORAS.find(j => j.dni === q);
+  if (!found) { err.style.display = 'block'; return; }
+  document.getElementById('grupoAdminNombre').textContent = found.nombre;
+  document.getElementById('grupoAdminCat').textContent    = 'Categoría ' + found.cat;
+  res.style.display = 'block';
+  rel.style.display = 'block';
+  document.getElementById('grupoRelacion').onchange = () => {
+    document.getElementById('btnConfirmarGrupo').disabled = !document.getElementById('grupoRelacion').value;
+  };
+}
+
+function confirmarGrupo() {
+  const dni2    = normDNI(document.getElementById('grupoDniInput').value.trim());
+  const relacion = document.getElementById('grupoRelacion').value;
+  const j1 = JUGADORAS.find(x => x.dni === _accionDni);
+  const j2 = JUGADORAS.find(x => x.dni === dni2);
+  if (!j1 || !j2 || !relacion) return;
+  // En producción: guardar la asociación en DB
+  console.log(`Grupo familiar: ${j1.nombre} <-> ${j2.nombre} (${relacion})`);
+  cerrarModal('modalGrupo');
+  // Feedback visual
+  const toast = document.createElement('div');
+  toast.textContent = `✅ ${j1.nombre.split(',')[0]} asociado/a con ${j2.nombre.split(',')[0]}`;
+  Object.assign(toast.style, {
+    position:'fixed', bottom:'80px', left:'50%', transform:'translateX(-50%)',
+    background:'#181818', color:'white', padding:'10px 18px', borderRadius:'8px',
+    fontSize:'13px', zIndex:'300', whiteSpace:'nowrap', boxShadow:'0 4px 16px rgba(0,0,0,0.2)'
+  });
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
+}
+
+try {
+  const saved = localStorage.getItem('lomas_dni');
+  if (saved) document.getElementById('dniInput').value = saved;
+} catch(e) {}
+
+document.addEventListener('DOMContentLoaded', initHome);
+initHome();
+
+// -- ADMIN INNER TABS --
+function switchAdminTab(tab) {
+  document.getElementById('admin-pagos-section').style.display   = tab === 'pagos'     ? 'block' : 'none';
+  document.getElementById('admin-jugadoras').style.display       = tab === 'jugadoras' ? 'block' : 'none';
+  document.querySelectorAll('.admin-tab').forEach(el => el.classList.remove('active'));
+  document.getElementById('atab-' + tab).classList.add('active');
+  if (tab === 'jugadoras') { renderIntegrantesTable(); renderCrecimiento(); }
+}
+
+function renderCrecimiento() {
+  // Construir mapa mes -> { altas, bajas }
+  const meses = {};
+  JUGADORAS.forEach(j => {
+    // Alta: mes de inscripcion
+    if (j.fechaInscripcion) {
+      const m = j.fechaInscripcion.slice(0,7); // 'YYYY-MM'
+      if (!meses[m]) meses[m] = { altas:0, bajas:0 };
+      meses[m].altas++;
+    }
+    // Baja
+    if (j.fechaBaja) {
+      const m = j.fechaBaja.slice(0,7);
+      if (!meses[m]) meses[m] = { altas:0, bajas:0 };
+      meses[m].bajas++;
+    }
+  });
+
+  const sorted = Object.keys(meses).sort();
+  let acumulado = 0;
+
+  document.getElementById('crecimientoTable').innerHTML = sorted.map(m => {
+    const { altas, bajas } = meses[m];
+    const neto = altas - bajas;
+    acumulado += neto;
+    const [y, mo] = m.split('-');
+    const label = MESES[parseInt(mo)-1] + ' ' + y;
+    const netoColor = neto > 0 ? '#2d6a4f' : neto < 0 ? 'var(--red)' : 'var(--text-soft)';
+    const netoStr   = neto > 0 ? '+'+neto : neto;
+    return `
+      <tr>
+        <td style="padding:10px 14px;border-bottom:1px solid var(--border);font-size:13px;white-space:nowrap">${label}</td>
+        <td style="padding:10px 14px;border-bottom:1px solid var(--border);text-align:center">
+          ${altas > 0 ? `<span style="font-size:12px;font-weight:600;color:#2d6a4f;background:#e6f4ee;padding:2px 9px;border-radius:20px">+${altas}</span>` : '<span style="color:var(--text-soft);font-size:12px">-</span>'}
+        </td>
+        <td style="padding:10px 14px;border-bottom:1px solid var(--border);text-align:center">
+          ${bajas > 0 ? `<span style="font-size:12px;font-weight:600;color:var(--red);background:var(--red-light);padding:2px 9px;border-radius:20px">-${bajas}</span>` : '<span style="color:var(--text-soft);font-size:12px">-</span>'}
+        </td>
+        <td style="padding:10px 14px;border-bottom:1px solid var(--border);text-align:center;font-family:'Playfair Display',serif;font-size:15px;font-weight:700;color:var(--black)">${acumulado}</td>
+      </tr>`;
+  }).join('');
+}
+
+// -- JUGADORAS DATA (demo) --
+// inscripcionMes: índice del mes en que se inscribió (0=Ene)
+const JUGADORAS = [
+  { nombre:'Arriola, Renata',           cat:'1ra',        dni:'12345678', tel:'2664111111', email:'renata@mail.com', tutor:'', fechaInscripcion:'2025-01-05', fechaActivacion:'2025-01-05', fechaBaja:'',         estado:'activa',    inscripcionMes:0 },
+  { nombre:'Calderon, Julissa',         cat:'1ra',        dni:'22222222', tel:'2664222222', email:'julissa@mail.com', tutor:'', fechaInscripcion:'2025-01-05', fechaActivacion:'2025-01-05', fechaBaja:'',         estado:'activa',    inscripcionMes:0 },
+  { nombre:'Conde, Alma',               cat:'7ma',        dni:'23456789', tel:'2664333333', email:'alma@mail.com', tutor:'Conde, María', fechaInscripcion:'2025-01-03', fechaActivacion:'2025-01-03', fechaBaja:'', estado:'activa',    inscripcionMes:0 },
+  { nombre:'Conde, Nahiara',            cat:'7ma',        dni:'34567890', tel:'2664333333', email:'alma@mail.com', tutor:'Conde, María', fechaInscripcion:'2025-01-03', fechaActivacion:'2025-01-03', fechaBaja:'', estado:'activa',    inscripcionMes:0 },
+  { nombre:'Gonzalez, Amira Mailen',   cat:'Formativas', dni:'77777777', tel:'2664444444', email:'amira@mail.com', tutor:'González, Johana', fechaInscripcion:'2025-01-04', fechaActivacion:'2025-01-04', fechaBaja:'', estado:'activa', inscripcionMes:0 },
+  { nombre:'Ortiz, Olivia',            cat:'Formativas', dni:'11111111', tel:'2664555555', email:'olivia@mail.com', tutor:'Ortiz Ávila, Amparo', fechaInscripcion:'2025-01-06', fechaActivacion:'2025-01-06', fechaBaja:'', estado:'activa', inscripcionMes:0 },
+  { nombre:'Sosa, Valentina',          cat:'Mamis',      dni:'55555550', tel:'2664666666', email:'valen@mail.com', tutor:'', fechaInscripcion:'2025-03-15', fechaActivacion:'2025-04-01', fechaBaja:'',          estado:'activa',    inscripcionMes:3 },
+  { nombre:'Sosa, Milagros',           cat:'Mamis',      dni:'55555551', tel:'2664666666', email:'valen@mail.com', tutor:'', fechaInscripcion:'2025-03-15', fechaActivacion:'2025-04-01', fechaBaja:'',          estado:'activa',    inscripcionMes:3 },
+  { nombre:'Romero, Julieta',          cat:'1ra',        dni:'66666660', tel:'2664777777', email:'julieta@mail.com', tutor:'', fechaInscripcion:'2025-01-08', fechaActivacion:'2025-01-08', fechaBaja:'',        estado:'activa',    inscripcionMes:0 },
+  { nombre:'Perez, Laura',             cat:'1ra',        dni:'88888888', tel:'2664888888', email:'laura@mail.com', tutor:'', fechaInscripcion:'2025-01-01', fechaActivacion:'2025-01-01', fechaBaja:'',          estado:'activa',    inscripcionMes:0 },
+  { nombre:'Torres, Malvina',          cat:'Mamis',      dni:'99999999', tel:'2664999999', email:'malvina@mail.com', tutor:'', fechaInscripcion:'2025-01-10', fechaActivacion:'',  fechaBaja:'',               estado:'pendiente', inscripcionMes:0 },
+  { nombre:'Blanco, Alison',           cat:'Formativas', dni:'10101010', tel:'2664100100', email:'alison@mail.com', tutor:'Blanco, Cecilia', fechaInscripcion:'2025-02-12', fechaActivacion:'2025-02-12', fechaBaja:'2025-03-30', estado:'baja', inscripcionMes:1 },
+];
+
+const STATUS_JUGADORA = { activa:'✅ Activo/a', pendiente:'⏳ Pendiente', baja:'🔴 Baja' };
+const BADGE_JUGADORA  = { activa:'b-paid', pendiente:'b-pending', baja:'b-overdue' };
+
+function renderIntegrantesTable() {
+  const fNombre = document.getElementById('filterIntegranteNombre').value.toLowerCase().trim();
+  const fCat    = document.getElementById('filterIntegranteCat').value;
+  const fEst    = document.getElementById('filterIntegranteEstado').value;
+
+  const filtered = JUGADORAS.filter(j =>
+    (!fNombre || j.nombre.toLowerCase().includes(fNombre)) &&
+    (!fCat    || j.cat === fCat) &&
+    (!fEst    || j.estado === fEst)
+  );
+
+  document.getElementById('jugadorasCount').textContent = filtered.length;
+
+  document.getElementById('jugadorasTable').innerHTML = filtered.length === 0
+    ? `<tr><td colspan="7" style="text-align:center;color:var(--text-soft);padding:24px">Sin resultados</td></tr>`
+    : filtered.map(j => `
+      <tr>
+        <td><strong>${j.nombre}</strong></td>
+        <td><span class="badge" style="background:var(--pink-soft);color:var(--pink-dark);white-space:nowrap">${j.cat}</span></td>
+        <td style="white-space:nowrap;font-size:12px">${formatFecha(j.fechaInscripcion)}</td>
+        <td style="white-space:nowrap;font-size:12px">${j.fechaActivacion ? formatFecha(j.fechaActivacion) : '-'}</td>
+        <td style="white-space:nowrap;font-size:12px">${j.fechaBaja ? formatFecha(j.fechaBaja) : '-'}</td>
+        <td style="white-space:nowrap"><span class="badge ${BADGE_JUGADORA[j.estado]}">${STATUS_JUGADORA[j.estado]}</span></td>
+        <td style="white-space:nowrap">
+          <div style="display:flex;gap:6px">
+            ${j.estado !== 'baja' ? `
+              <button onclick="abrirBaja('${j.dni}','${j.nombre}')"
+                style="padding:4px 10px;border:1px solid var(--red);border-radius:6px;background:none;color:var(--red);font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:'Inter',sans-serif">
+                Dar de baja
+              </button>` : ''}
+            <button onclick="abrirGrupo('${j.dni}','${j.nombre}')"
+              style="padding:4px 10px;border:1px solid var(--pink);border-radius:6px;background:none;color:var(--pink-dark);font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:'Inter',sans-serif">
+              Grupo familiar
+            </button>
+          </div>
+        </td>
+      </tr>`).join('');
+}
+
+function formatFecha(iso) {
+  if (!iso) return '-';
+  const [y,m,d] = iso.split('-');
+  return `${d}/${m}/${y.slice(2)}`;
+}
+
+// -- INSCRIPCIÓN --
+function normDNI(raw) { return raw.replace(/[\.\s\-,]/g,''); }
+
+// Capitaliza primera letra de cada palabra, respeta partículas comunes
+function normalizarNombre(raw) {
+  if (!raw) return '';
+  const particulas = new Set(['de','del','la','las','los','y','e','van','von','di','da','dos','das']);
+  return raw.trim().toLowerCase()
+    .split(/\s+/)
+    .map((word, i) => {
+      if (i > 0 && particulas.has(word)) return word;
+      return word.charAt(0).toUpperCase() + word.slice(1);
+    })
+    .join(' ');
+}
+
+function validarDNI(raw) {
+  const d = normDNI(raw);
+  return /^\d{7,8}$/.test(d);
+}
+
+function buscarGrupoDNI() {
+  const raw  = document.getElementById('f-grupo-dni').value.trim();
+  const q    = normDNI(raw);
+  const errEl = document.getElementById('f-grupo-error');
+  const resEl = document.getElementById('f-grupo-result');
+  const relWrap = document.getElementById('f-relacion-wrap');
+
+  errEl.style.display = 'none';
+  resEl.style.display = 'none';
+  relWrap.style.display = 'none';
+
+  if (q.length < 7) return;
+
+  // Buscar en JUGADORAS por DNI
+  const found = JUGADORAS.find(j => j.dni === q);
+  if (!found) {
+    errEl.style.display = 'block';
+    return;
+  }
+  document.getElementById('f-grupo-nombre').textContent = found.nombre;
+  document.getElementById('f-grupo-cat').textContent    = 'Categoría ' + found.cat;
+  resEl.style.display  = 'block';
+  relWrap.style.display = 'block';
+}
+
+function submitInscripcion() {
+  const apellido = normalizarNombre(document.getElementById('f-apellido').value);
+  const nombre   = normalizarNombre(document.getElementById('f-nombre').value);
+  const dniRaw   = document.getElementById('f-dni').value.trim();
+  const cat      = document.getElementById('f-cat').value;
+  const tel      = document.getElementById('f-tel').value.trim();
+  const errGlob  = document.getElementById('f-error-global');
+  const dniErr   = document.getElementById('f-dni-error');
+
+  dniErr.style.display = 'none';
+  errGlob.style.display = 'none';
+  document.getElementById('f-dni').classList.remove('error');
+
+  if (!apellido || !nombre || !cat || !tel) {
+    errGlob.textContent = 'Completá todos los campos obligatorios.';
+    errGlob.style.display = 'block';
+    return;
+  }
+  if (!validarDNI(dniRaw)) {
+    document.getElementById('f-dni').classList.add('error');
+    dniErr.style.display = 'block';
+    return;
+  }
+
+  const tutorDniRaw = document.getElementById('f-tutor-dni').value.trim();
+  if (tutorDniRaw && !validarDNI(tutorDniRaw)) {
+    document.getElementById('f-tutor-dni').classList.add('error');
+    document.getElementById('f-tutor-dni-error').style.display = 'block';
+    return;
+  }
+
+  const dniNorm = normDNI(dniRaw);
+  const hoy = new Date();
+  const mesInicio = hoy.getDate() <= 10 ? hoy.getMonth() : hoy.getMonth() + 1;
+
+  console.log('Nueva inscripción:', {
+    apellido, nombre, dni: dniNorm, cat, tel,
+    tutor: {
+      apellido: normalizarNombre(document.getElementById('f-tutor-apellido').value),
+      nombre:   normalizarNombre(document.getElementById('f-tutor-nombre').value),
+      dni:      tutorDniRaw ? normDNI(tutorDniRaw) : '',
+      tel:      document.getElementById('f-tutor-tel').value.trim(),
+    },
+    grupoDni:  normDNI(document.getElementById('f-grupo-dni').value.trim()),
+    relacion:  document.getElementById('f-relacion').value,
+    fechaInscripcion: hoy.toISOString().split('T')[0],
+    mesInicio,
+  });
+
+  document.getElementById('form-exito-msg').innerHTML =
+    `<strong>${apellido}, ${nombre}</strong> ya es parte de Lomas Hockey Club 🎉<br>
+    Podés abonar tu inscripción y primera cuota ahora.`;
+
+  // Guardar DNI normalizado para el botón de pago
+  document.getElementById('btnIrAPagar').onclick = () => irAPagar(dniNorm);
+
+  document.getElementById('sc-form').style.display = 'none';
+  document.getElementById('sc-form-exito').style.display = 'block';
+  window.scrollTo({ top:0, behavior:'smooth' });
+}
+
+function resetForm() {
+  ['f-apellido','f-nombre','f-dni','f-tel',
+   'f-tutor-apellido','f-tutor-nombre','f-tutor-dni','f-tutor-tel',
+   'f-grupo-dni']
+    .forEach(id => {
+      const el = document.getElementById(id);
+      if (el) { el.value = ''; el.classList?.remove('error'); }
+    });
+  document.getElementById('f-cat').value = '';
+  document.getElementById('f-relacion').value = '';
+  document.getElementById('f-dni-error').style.display = 'none';
+  document.getElementById('f-error-global').style.display = 'none';
+  document.getElementById('f-grupo-result').style.display = 'none';
+  document.getElementById('f-relacion-wrap').style.display = 'none';
+  document.getElementById('sc-form-exito').style.display = 'none';
+  document.getElementById('sc-form').style.display = 'block';
+  window.scrollTo({ top:0, behavior:'smooth' });
+}
+</script>
+<!-- ══ MODAL BAJA ══ -->
+<div id="modalBaja" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center;padding:16px">
+  <div style="background:var(--white);border-radius:16px;padding:24px;width:100%;max-width:360px;box-shadow:0 8px 40px rgba(0,0,0,0.2)">
+    <div style="font-family:'Playfair Display',serif;font-size:17px;font-weight:700;color:var(--black);margin-bottom:6px">Dar de baja</div>
+    <div style="font-size:13px;color:var(--text-soft);margin-bottom:16px">Vas a dar de baja a <strong id="bajaNombre"></strong>. Esta acción registrará la fecha de hoy como fecha de baja.</div>
+    <div style="margin-bottom:16px">
+      <label class="form-label">Motivo (opcional)</label>
+      <input class="input-field" id="bajaMotivo" type="text" placeholder="Ej: mudanza, lesión...">
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn-ghost" style="flex:1" onclick="cerrarModal('modalBaja')">Cancelar</button>
+      <button class="btn-primary" style="flex:1;background:var(--red)" onclick="confirmarBaja()">Dar de baja</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL GRUPO FAMILIAR ══ -->
+<div id="modalGrupo" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;padding:16px">
+  <div style="background:var(--white);border-radius:16px;padding:24px;width:100%;max-width:380px;box-shadow:0 8px 40px rgba(0,0,0,0.2)">
+    <div style="font-family:'Playfair Display',serif;font-size:17px;font-weight:700;color:var(--black);margin-bottom:6px">Asociar grupo familiar</div>
+    <div style="font-size:13px;color:var(--text-soft);margin-bottom:16px">Asociar a <strong id="grupoNombre"></strong> con otro integrante ya registrado.</div>
+
+    <div style="margin-bottom:12px">
+      <label class="form-label">DNI del integrante a asociar</label>
+      <input class="input-field" id="grupoDniInput" type="text" placeholder="Ej: 12345678" maxlength="12" inputmode="numeric" oninput="buscarGrupoAdmin()">
+      <div class="error-msg" id="grupoDniError">No encontramos ese DNI en el registro.</div>
+      <div id="grupoAdminResult" style="display:none;margin-top:8px;padding:10px 12px;background:var(--pink-bg);border:1px solid var(--pink-light);border-radius:8px;font-size:13px">
+        <div style="font-weight:600;color:var(--pink-dark)" id="grupoAdminNombre">—</div>
+        <div style="font-size:11px;color:var(--text-soft)" id="grupoAdminCat">—</div>
+      </div>
+    </div>
+
+    <div id="grupoRelacionWrap" style="display:none;margin-bottom:16px">
+      <label class="form-label">Relación</label>
+      <select class="input-field" id="grupoRelacion" style="cursor:pointer">
+        <option value="">Seleccioná la relación</option>
+        <option value="hermana/o">Hermana/o</option>
+        <option value="hija/o">Hija/o</option>
+        <option value="madre/padre">Madre / Padre</option>
+        <option value="prima/o">Prima/o</option>
+        <option value="otra">Otra relación familiar</option>
+      </select>
+    </div>
+
+    <div style="display:flex;gap:10px">
+      <button class="btn-ghost" style="flex:1" onclick="cerrarModal('modalGrupo')">Cancelar</button>
+      <button class="btn-primary" style="flex:1" id="btnConfirmarGrupo" onclick="confirmarGrupo()" disabled>Asociar</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
