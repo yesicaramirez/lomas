@@ -1059,12 +1059,34 @@ function getMesesDeuda(pid) {
   return deuda;
 }
 
+// ¿Todavía no pagó la inscripción?
+function debeInscripcion(pid) {
+  return !window.PAGADOS_INSCRIPCION?.[String(pid)];
+}
+
+// ¿Se inscribió después del día 10? (inscripción tardía)
+function inscripcionTardia(pid) {
+  const integrante = Object.values(DB).flat().find(p => String(p.id) === String(pid));
+  if (!integrante?.fechaInscripcion) return false;
+  const parts = integrante.fechaInscripcion.split('-');
+  if (parts.length !== 3) return false;
+  const dia = parseInt(parts[2]);
+  return dia > 10;
+}
+
 // ¿Es el primer pago? (ningún mes pagado aún Y ya tiene deuda)
 function esPrimerPago(pid) {
   if ((PAGADOS[pid] || []).length > 0) return false;
-  // Si no tiene pagos, verificar si ya le corresponde pagar
   const meses = getMesesDeuda(pid);
-  return meses.length > 0; // solo es "primer pago" si tiene meses pendientes
+  return meses.length > 0;
+}
+
+// ¿Solo debe inscripción? (inscripción tardía, sin cuotas aún, sin inscripción paga)
+function soloDebeInscripcion(pid) {
+  const meses = getMesesDeuda(pid);
+  const sinCuotas = meses.length === 0;
+  const sinInscripcion = debeInscripcion(pid);
+  return sinCuotas && sinInscripcion && inscripcionTardia(pid);
 }
 
 let grupo = [], selIds = new Set(), tipoAuto = 'regular';
@@ -1204,7 +1226,16 @@ function buscar() {
         </div>
       </div>`).join('') + '<div style="height:1px"></div>';
 
-    document.getElementById('alDiaOk').style.display = (allPagados.length > 0 && todoPago) ? 'block' : 'none';
+    // Verificar si debe inscripción aunque no tenga cuotas pendientes
+    const debeInscr = grupo.some(p => soloDebeInscripcion(p.id));
+    if (debeInscr) {
+      // Mostrar sección de pago solo con inscripción
+      document.getElementById('payOpts').style.display = 'block';
+      document.getElementById('recargoNote').style.display = 'none';
+      recalc();
+    }
+
+    document.getElementById('alDiaOk').style.display = (allPagados.length > 0 && todoPago && !debeInscr) ? 'block' : 'none';
   } else {
     // Historial compacto para quien tiene deuda
     const allPagados = [];
@@ -1328,15 +1359,45 @@ function recalc() {
   }
 
   const recargo = hayRec ? RECARGO : 0;
-  // ¿Algún integrante del grupo paga por primera vez?
+
+  // ¿Algún integrante solo debe inscripción? (se inscribió tarde, sin cuotas aún)
+  const soloInscripcion = [...selIds].some(id => soloDebeInscripcion(id));
+  // ¿Algún integrante debe inscripción + cuota?
   const primerPago = [...selIds].some(id => esPrimerPago(id));
-  const inscTotal  = primerPago ? INSCRIPCION * [...selIds].filter(id => esPrimerPago(id)).length : 0;
+  // ¿Algún integrante debe inscripción pendiente (tardía, ahora paga cuota)?
+  const inscPendiente = !soloInscripcion && [...selIds].some(id => debeInscripcion(id) && inscripcionTardia(id));
+
+  const inscTotal = (primerPago || soloInscripcion || inscPendiente)
+    ? INSCRIPCION * [...selIds].filter(id => debeInscripcion(id)).length
+    : 0;
+
   let grandTotal = inscTotal;
   let lines = '';
 
-  // Inscripción al inicio si aplica
-  if (primerPago) {
-    const nPrimeras = [...selIds].filter(id => esPrimerPago(id)).length;
+  // Solo inscripción — sin cuotas todavía
+  if (soloInscripcion && mesesArr.length === 0) {
+    lines += `
+      <div class="total-line" style="margin-bottom:3px">
+        <span class="tl-label" style="font-weight:700;color:var(--pink-dark)">Inscripción</span>
+        <span class="tl-val" style="color:var(--text-soft);font-size:11px">$${inscTotal.toLocaleString('es-AR')}</span>
+      </div>
+      <div class="total-line">
+        <span class="tl-label">$${INSCRIPCION.toLocaleString('es-AR')}</span>
+        <span class="tl-val">$${inscTotal.toLocaleString('es-AR')}</span>
+      </div>`;
+
+    document.getElementById('totalBox').style.display = 'block';
+    document.getElementById('totalAmt').textContent   = '$' + grandTotal.toLocaleString('es-AR');
+    document.getElementById('stickyAmt').textContent  = '$' + grandTotal.toLocaleString('es-AR');
+    document.getElementById('stickyBar').style.display = 'block';
+    document.getElementById('btnPagar').disabled = false;
+    document.getElementById('totalLines').innerHTML = lines;
+    return;
+  }
+
+  // Inscripción al inicio si aplica (primer pago o inscripción pendiente)
+  if (primerPago || inscPendiente) {
+    const nPrimeras = [...selIds].filter(id => debeInscripcion(id)).length;
     lines += `
       <div class="total-line" style="margin-bottom:3px">
         <span class="tl-label" style="font-weight:700;color:var(--pink-dark)">Inscripción</span>
@@ -1485,18 +1546,23 @@ async function cargarDatos() {
       });
     });
 
-    // ── Construir PAGADOS (dni -> [{m, f}]) ──
-    // Mapear nombre de mes a índice
+    // ── Construir PAGADOS (dni -> [{m, f}]) y PAGADOS_INSCRIPCION ──
     const mesIdx = {};
     MESES.forEach((m, i) => mesIdx[m.toLowerCase()] = i);
+    window.PAGADOS_INSCRIPCION = {}; // dni -> true si ya pagó inscripción
 
     pagos.forEach(p => {
       if (p['Estado'] !== 'pagado') return;
       const dni = p['DNI'];
+      // Inscripción
+      if (p['Mes'].toLowerCase() === 'inscripcion') {
+        window.PAGADOS_INSCRIPCION[dni] = true;
+        return;
+      }
       if (!PAGADOS[dni]) PAGADOS[dni] = [];
       const m = mesIdx[p['Mes'].toLowerCase()];
       if (m !== undefined && !PAGADOS[dni].some(e => e.m === m)) {
-        PAGADOS[dni].push({ m, f: '' }); // fecha no disponible en histórico
+        PAGADOS[dni].push({ m, f: '' });
       }
     });
 
