@@ -1198,7 +1198,10 @@ function buscar() {
 
   // Meses adeudados del grupo (unión)
   const todosMeses = new Set();
-  grupo.forEach(p => getMesesDeuda(p.id).forEach(m => todosMeses.add(m)));
+  grupo.forEach(p => {
+    if (soloDebeInscripcion(p.id)) return; // no agregar meses de quien solo debe inscripción
+    getMesesDeuda(p.id).forEach(m => todosMeses.add(m));
+  });
   mesesSel = new Set(todosMeses);
 
   renderGrupo();
