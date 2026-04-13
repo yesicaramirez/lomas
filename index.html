@@ -1409,7 +1409,7 @@ async function cargarDatos() {
     // Agrupar jugadores por grupo_id
     const grupoMap = {}; // grupo_id -> [jugadores]
     jugadores.forEach(j => {
-      if (j['Exento'] === 'TRUE') return; // exentos no entran en DB de pagos
+      if (String(j['Exento']).toUpperCase() === 'TRUE') return; // exentos no entran en DB de pagos
       const gid = dniToGrupo[j['DNI']];
       const entry = {
         id:      j['DNI'],
@@ -1458,8 +1458,8 @@ async function cargarDatos() {
       fechaInscripcion: j['Fecha inscripcion'] || '',
       fechaActivacion:  j['Fecha inscripcion'] || '',
       fechaBaja:        '',
-      estado:           j['Exento'] === 'TRUE' ? 'exenta' : (j['Estado'] || 'activa'),
-      exento:           j['Exento'] === 'TRUE',
+      estado:           String(j['Exento']).toUpperCase() === 'TRUE' ? 'exenta' : (j['Estado'] || 'activa'),
+      exento:           String(j['Exento']).toUpperCase() === 'TRUE',
     }));
 
     _datosListos = true;
@@ -1586,29 +1586,34 @@ function reset() {
 let ADMIN_DATA = [];
 
 function buildAdminData() {
-  // Construir desde los pagos del Sheet
-  // _pagosSheet es el array crudo de pagos cargado en cargarDatos
   if (!window._pagosSheet) return;
   ADMIN_DATA = window._pagosSheet.map(p => {
-    const mesNombre = p['Mes'];
-    const anio = p['Año'];
-    const mesAbrev = mesNombre.slice(0,3);
-    const j = JUGADORAS.find(x => x.dni === p['DNI']);
+    const mesNombre = String(p['Mes'] || '').trim();
+    // Buscar año con o sin ñ (por problemas de encoding en el Sheet)
+    const anio = String(p['Anio'] || p['Año'] || p['Ano'] || '2026').trim();
+    const mesAbrev  = mesNombre.slice(0,3);
+    const j = JUGADORAS.find(x => x.dni === String(p['DNI']).trim());
     return {
-      name:    p['Nombre'],
+      name:    String(p['Nombre'] || '').trim(),
       cat:     j ? j.cat : '',
       month:   mesAbrev + ' ' + anio,
       amount:  parseInt(p['Monto']) || 0,
-      recargo: p['Recargo'] === 'TRUE' ? CONFIG.RECARGO : 0,
+      recargo: String(p['Recargo']).toUpperCase() === 'TRUE' ? CONFIG.RECARGO : 0,
       date:    '-',
       status:  p['Estado'] === 'pagado' ? 'paid' : p['Estado'] === 'no_aplica' ? 'na' : 'pending',
       origen:  p['Origen'] || '',
       paymentId: p['PaymentID'] || '',
     };
   });
+  console.log('ADMIN_DATA sample:', ADMIN_DATA.slice(0,3));
 }
 
 function renderAdminTable() {
+  if (!window._pagosSheet) {
+    document.getElementById('adminTable').innerHTML =
+      '<tr><td colspan="6" style="text-align:center;color:var(--text-soft);padding:24px">Cargando datos...</td></tr>';
+    return;
+  }
   buildAdminData();
   const fMes       = document.getElementById('filterMes').value;
   const fCat       = document.getElementById('filterCat').value;
