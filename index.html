@@ -310,6 +310,7 @@
   tr:hover td { background: var(--pink-bg); }
   .badge { display: inline-flex; align-items: center; padding: 2px 9px; border-radius: 20px; font-size: 11px; font-weight: 600; }
   .b-paid    { background: #e6f4ee; color: #2d6a4f; }
+  .b-bonificado { background: #eef4ff; color: #2d4a8a; }
   .b-pending { background: #fff8e1; color: #a07000; }
   .b-na      { background: #f0f0f0; color: #888; }
   .b-overdue { background: var(--red-light); color: var(--red); }
@@ -1245,7 +1246,7 @@ function buscar() {
         <span style="font-size:14px;font-weight:500">${MESES[e.m]}</span>
         <div style="display:flex;align-items:center;gap:8px">
           <span style="font-size:12px;color:var(--text-soft)">${e.f}</span>
-          <span style="font-size:11px;font-weight:600;color:#2d6a4f;background:#e6f4ee;padding:2px 8px;border-radius:20px">✅ Pago</span>
+          <span style="font-size:11px;font-weight:600;color:#2d6a4f;background:#e6f4ee;padding:2px 8px;border-radius:20px">${e.bonificado ? '🎁 Bonificado' : '✅ Pago'}</span>
         </div>
       </div>`).join('') + '<div style="height:1px"></div>';
 
@@ -1280,7 +1281,7 @@ function buscar() {
           <span style="font-size:13px;color:var(--text-soft)">${MESES[e.m]}</span>
           <div style="display:flex;align-items:center;gap:8px">
             <span style="font-size:11px;color:var(--text-soft)">${e.f}</span>
-            <span style="font-size:11px;font-weight:600;color:#2d6a4f;background:#e6f4ee;padding:2px 8px;border-radius:20px">✅ Pago</span>
+            <span style="font-size:11px;font-weight:600;color:#2d6a4f;background:#e6f4ee;padding:2px 8px;border-radius:20px">${e.bonificado ? '🎁 Bonificado' : '✅ Pago'}</span>
           </div>
         </div>`).join('') + '<div style="height:1px"></div>';
     } else {
@@ -1609,7 +1610,7 @@ async function cargarDatos() {
     window.PAGADOS_INSCRIPCION = {}; // dni -> true si ya pagó inscripción
 
     pagos.forEach(p => {
-      if (p['Estado'] !== 'pagado') return;
+      if (p['Estado'] !== 'pagado' && p['Estado'] !== 'bonificado') return;
       const dni = p['DNI'];
       // Inscripción
       if (p['Mes'].toLowerCase() === 'inscripcion') {
@@ -1619,7 +1620,7 @@ async function cargarDatos() {
       if (!PAGADOS[dni]) PAGADOS[dni] = [];
       const m = mesIdx[p['Mes'].toLowerCase()];
       if (m !== undefined && !PAGADOS[dni].some(e => e.m === m)) {
-        PAGADOS[dni].push({ m, f: '' });
+        PAGADOS[dni].push({ m, f: '', bonificado: p['Estado'] === 'bonificado' });
       }
     });
 
@@ -1790,7 +1791,7 @@ function buildAdminData() {
       amount:  parseInt(p['Monto']) || 0,
       recargo: String(p['Recargo']).toUpperCase() === 'TRUE' ? CONFIG.RECARGO : 0,
       date:    '-',
-      status:  p['Estado'] === 'pagado' ? 'paid' : p['Estado'] === 'no_aplica' ? 'na' : 'pending',
+      status:  (p['Estado'] === 'pagado' || p['Estado'] === 'bonificado') ? (p['Estado'] === 'bonificado' ? 'bonificado' : 'paid') : p['Estado'] === 'no_aplica' ? 'na' : 'pending',
       origen:  p['Origen'] || '',
       paymentId: p['PaymentID'] || '',
     };
@@ -1844,8 +1845,8 @@ function renderAdminTable() {
   const mesLabel = document.getElementById('filterMes').value || 'Todos los meses';
   document.getElementById('statMesLabel').textContent = mesLabel;
 
-  const statusLabel = { paid:'✅ Pago', pending:'⏳ Pendiente', na:'— No aplica' };
-  const statusBadge = { paid:'b-paid', pending:'b-pending', na:'b-na' };
+  const statusLabel = { paid:'✅ Pago', pending:'⏳ Pendiente', na:'— No aplica', bonificado:'🎁 Bonificado' };
+  const statusBadge = { paid:'b-paid', pending:'b-pending', na:'b-na', bonificado:'b-bonificado' };
 
   document.getElementById('adminTable').innerHTML = filtered.length === 0
     ? `<tr><td colspan="6" style="text-align:center;color:var(--text-soft);padding:24px">Sin resultados para este filtro</td></tr>`
