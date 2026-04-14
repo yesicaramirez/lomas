@@ -365,6 +365,7 @@
   .admin-tab.active { background: var(--black); color: var(--pink-light); font-weight: 600; }
   .admin-tab:hover:not(.active) { background: var(--pink-bg); }
 </style>
+<script src="https://sdk.mercadopago.com/js/v2"></script>
 </head>
 <body>
 
@@ -942,6 +943,9 @@
   </div>
 </div>
 <script>
+// Inicializar SDK de MP para captura de Device ID (mejora aprobación)
+const _mp = new MercadoPago('APP_USR-031a6920-8add-451f-b314-43cfa6eb92d0');
+
 // DB y PAGADOS se construyen dinámicamente desde el Sheet
 let DB      = {};
 let PAGADOS = {};
