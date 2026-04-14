@@ -1649,7 +1649,12 @@ async function cargarDatos() {
   }
 }
 
+let _pagoEnProceso = false;
+
 async function pagar() {
+  if (_pagoEnProceso) return; // evitar doble click
+  _pagoEnProceso = true;
+
   const jugs     = grupo.filter(p => selIds.has(p.id));
   const mesArr   = [...mesesSel].sort((a,b) => a-b);
   const mes      = mesArr[0]; // mes base para el tipo
@@ -1705,16 +1710,7 @@ async function pagar() {
       desglose,
     };
 
-    const res  = await fetch(APPS_SCRIPT_URL, {
-      method:  'POST',
-      mode:    'no-cors',  // Apps Script no soporta CORS directo
-      headers: { 'Content-Type': 'text/plain' }, // text/plain evita preflight
-      body:    JSON.stringify(payload),
-    });
-
-    // Con no-cors no podemos leer la respuesta — redirigimos via URL con params
-    // El Apps Script crea la preference y nos redirige directamente
-    // Alternativa: usar un form POST que no tiene restriccion CORS
+    // Usar form POST para redirigir a MP (evita CORS y genera una sola preferencia)
     const form = document.createElement('form');
     form.method = 'POST';
     form.action = APPS_SCRIPT_URL;
@@ -1728,6 +1724,7 @@ async function pagar() {
     form.submit();
 
   } catch (err) {
+    _pagoEnProceso = false;
     btn.disabled  = false;
     btn.innerHTML = original;
     alert('Hubo un problema al conectar con el sistema de pagos. Intentá de nuevo.');
