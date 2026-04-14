@@ -1054,7 +1054,30 @@ function getPrecio(mes) {
 
 
 
-function tieneRecargo() { return HOY_DIA > CONFIG.DIA_LIMITE; }
+// DNIs con período de gracia extendido (30 días) — pagan después en el mes
+const GRACIA_EXTENDIDA = new Set([
+  '30461329', // Casco, Gabriela (+ grupo G01)
+  '37723882', // González, Johana (+ grupo G04)
+  '27369248', // Portela, Melisa (+ grupo G09)
+  '36046348', // Cornejo, Giuliana (+ grupo G02)
+]);
+
+function tieneRecargo() {
+  if (HOY_DIA <= CONFIG.DIA_LIMITE) return false;
+  // Verificar si algún integrante seleccionado tiene gracia extendida
+  if (typeof selIds !== 'undefined' && selIds.size > 0) {
+    const todosConGracia = [...selIds].every(id => {
+      // Buscar si este DNI o alguno de su grupo tiene gracia extendida
+      const integrante = Object.values(DB).flat().find(p => String(p.id) === String(id));
+      if (!integrante) return false;
+      // Buscar grupo del integrante
+      const grupoArr = DB[id] || [];
+      return grupoArr.some(p => GRACIA_EXTENDIDA.has(String(p.id))) || GRACIA_EXTENDIDA.has(String(id));
+    });
+    if (todosConGracia) return HOY_DIA > 30; // 30 días de gracia
+  }
+  return true; // día 10 ya pasó, aplica recargo normal
+}
 
 // Meses que debe el integrante = desde su mes de inscripción hasta MES_ACT, no pagados
 function getMesesDeuda(pid) {
