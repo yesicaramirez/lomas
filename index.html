@@ -1695,6 +1695,7 @@ async function pagar() {
       tipo:        tipoAuto,
       primerPago:  primer || soloinscr,
       soloInscripcion: soloinscr,
+      conRecargo:  recargo > 0,
       montoTotal,
       desglose,
     };
@@ -1765,7 +1766,9 @@ let ADMIN_DATA = [];
 
 function buildAdminData() {
   if (!window._pagosSheet) return;
-  ADMIN_DATA = window._pagosSheet.map(p => {
+  ADMIN_DATA = window._pagosSheet
+    .filter(p => p['Mes'] !== 'Inscripcion') // inscripciones se muestran en Otros Ingresos
+    .map(p => {
     const mesNombre = String(p['Mes'] || '').trim();
     // Obtener año desde cualquier key disponible, fallback al año actual
     const anioRaw = p['Anio'] !== undefined ? p['Anio'] :
