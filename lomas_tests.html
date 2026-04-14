@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lomas Hockey — Tests Automatizados</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', monospace; background: #0f0f0f; color: #e0e0e0; padding: 24px; min-height: 100vh; }
+  h1 { color: #c4758f; font-size: 20px; margin-bottom: 4px; }
+  .subtitle { color: #666; font-size: 13px; margin-bottom: 24px; }
+  .suite { margin-bottom: 20px; }
+  .suite-title { font-size: 13px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #222; }
+  .test { display: flex; align-items: flex-start; gap: 10px; padding: 7px 0; border-bottom: 1px solid #1a1a1a; font-size: 13px; }
+  .test:last-child { border-bottom: none; }
+  .icon { width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; flex-shrink: 0; margin-top: 1px; }
+  .pass { background: #1a3a2a; color: #4ade80; }
+  .fail { background: #3a1a1a; color: #f87171; }
+  .skip { background: #2a2a1a; color: #facc15; }
+  .test-name { flex: 1; color: #ccc; }
+  .test-detail { font-size: 11px; color: #555; margin-top: 2px; }
+  .test-error { font-size: 11px; color: #f87171; margin-top: 2px; font-family: monospace; }
+  .summary { display: flex; gap: 16px; margin-bottom: 24px; padding: 16px; background: #1a1a1a; border-radius: 8px; }
+  .stat { text-align: center; }
+  .stat-num { font-size: 28px; font-weight: 700; }
+  .stat-label { font-size: 11px; color: #666; }
+  .pass-num { color: #4ade80; }
+  .fail-num { color: #f87171; }
+  .skip-num { color: #facc15; }
+  .total-num { color: #c4758f; }
+  .run-btn { background: #c4758f; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-size: 14px; cursor: pointer; margin-bottom: 24px; font-family: inherit; }
+  .run-btn:hover { background: #9e5470; }
+  .progress { height: 4px; background: #222; border-radius: 2px; margin-bottom: 24px; overflow: hidden; }
+  .progress-bar { height: 100%; background: #4ade80; transition: width 0.3s; }
+</style>
+</head>
+<body>
+
+<h1>🏑 Lomas Hockey — Test Suite</h1>
+<div class="subtitle">Tests unitarios automatizados de la lógica de negocio</div>
+
+<button class="run-btn" onclick="runAll()">▶ Correr todos los tests</button>
+
+<div class="summary" id="summary" style="display:none">
+  <div class="stat"><div class="stat-num pass-num" id="s-pass">0</div><div class="stat-label">Pasaron</div></div>
+  <div class="stat"><div class="stat-num fail-num" id="s-fail">0</div><div class="stat-label">Fallaron</div></div>
+  <div class="stat"><div class="stat-num total-num" id="s-total">0</div><div class="stat-label">Total</div></div>
+</div>
+<div class="progress" id="progress" style="display:none"><div class="progress-bar" id="progress-bar" style="width:0%"></div></div>
+
+<div id="results"></div>
+
+<script>
+// ══════════════════════════════════════════════════════
+// FUNCIONES EXTRAÍDAS DEL SITIO (copiadas para testing)
+// ══════════════════════════════════════════════════════
+
+const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+const CONFIG = {
+  INSCRIPCION:      5000,
+  RECARGO:          2000,
+  CUOTA_ENE_MAR:   10000,
+  CUOTA_ABR_JUL:   15000,
+  CUOTA_AGO_DIC:   18000,
+  CUOTA_FAMILIAR_DESC: 0.5,
+  DIA_LIMITE:       10,
+};
+
+function getPrecio(mes) {
+  if (mes <= 2) return CONFIG.CUOTA_ENE_MAR;
+  if (mes <= 6) return CONFIG.CUOTA_ABR_JUL;
+  return CONFIG.CUOTA_AGO_DIC;
+}
+
+function calcMesTotal(mes, tipo, count, recargo) {
+  const base  = getPrecio(mes);
+  const mitad = base / 2;
+  if (tipo === 'familiar' && count >= 2) {
+    return base + mitad * (count - 1) + recargo * count;
+  }
+  return base * count + recargo * count;
+}
+
+function normalizarDNI(raw) {
+  return raw.replace(/\D/g, '');
+}
+
+function formatearDNIInput(val) {
+  const digits = val.replace(/\D/g, '').slice(0, 8);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 5) return digits.slice(0,2) + '.' + digits.slice(2);
+  return digits.slice(0,2) + '.' + digits.slice(2,5) + '.' + digits.slice(5);
+}
+
+// Simular DB, PAGADOS y grupos para tests
+let DB = {};
+let PAGADOS = {};
+let PAGADOS_INSCRIPCION = {};
+
+function setupDB(jugadores, pagados, pagadosInscripcion) {
+  DB = jugadores;
+  PAGADOS = pagados || {};
+  PAGADOS_INSCRIPCION = pagadosInscripcion || {};
+}
+
+function debeInscripcion(pid) {
+  return !PAGADOS_INSCRIPCION[String(pid)];
+}
+
+function inscripcionTardia(pid) {
+  const integrante = Object.values(DB).flat().find(p => String(p.id) === String(pid));
+  if (!integrante?.fechaInscripcion) return false;
+  const parts = integrante.fechaInscripcion.split('-');
+  if (parts.length !== 3) return false;
+  const dia = parseInt(parts[2]);
+  return dia > 10;
+}
+
+function getMesesDeuda(pid, mesAct) {
+  const pidStr  = String(pid);
+  const pagados = PAGADOS[pidStr] || [];
+  const integrante = Object.values(DB).flat().find(p => String(p.id) === pidStr);
+  let desde = 0;
+  if (integrante?.fechaInscripcion) {
+    const parts = integrante.fechaInscripcion.split('-');
+    const d = parts.length === 3
+      ? new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]))
+      : new Date(integrante.fechaInscripcion);
+    if (!isNaN(d)) {
+      desde = d.getDate() <= 10 ? d.getMonth() : d.getMonth() + 1;
+    }
+  }
+  const deuda = [];
+  for (let i = desde; i <= mesAct; i++) {
+    if (!pagados.some(p => p.m === i)) deuda.push(i);
+  }
+  return deuda;
+}
+
+function esPrimerPago(pid, mesAct) {
+  if ((PAGADOS[pid] || []).length > 0) return false;
+  return getMesesDeuda(pid, mesAct).length > 0;
+}
+
+function soloDebeInscripcion(pid, mesAct) {
+  const meses = getMesesDeuda(pid, mesAct);
+  const sinCuotas = meses.length === 0;
+  const sinInscripcion = debeInscripcion(pid);
+  return sinCuotas && sinInscripcion && inscripcionTardia(pid);
+}
+
+// ══════════════════════════════════════════════════════
+// FRAMEWORK DE TESTING
+// ══════════════════════════════════════════════════════
+
+const suites = [];
+let currentSuite = null;
+
+function describe(name, fn) {
+  currentSuite = { name, tests: [] };
+  suites.push(currentSuite);
+  fn();
+}
+
+function it(name, fn) {
+  currentSuite.tests.push({ name, fn });
+}
+
+function expect(val) {
+  return {
+    toBe: (expected) => {
+      if (val !== expected) throw new Error(`Expected ${JSON.stringify(expected)}, got ${JSON.stringify(val)}`);
+    },
+    toEqual: (expected) => {
+      if (JSON.stringify(val) !== JSON.stringify(expected))
+        throw new Error(`Expected ${JSON.stringify(expected)}, got ${JSON.stringify(val)}`);
+    },
+    toContain: (item) => {
+      if (!val.includes(item)) throw new Error(`Expected array to contain ${JSON.stringify(item)}, got ${JSON.stringify(val)}`);
+    },
+    toHaveLength: (len) => {
+      if (val.length !== len) throw new Error(`Expected length ${len}, got ${val.length}`);
+    },
+    toBeGreaterThan: (n) => {
+      if (val <= n) throw new Error(`Expected ${val} > ${n}`);
+    },
+    toBeTruthy: () => {
+      if (!val) throw new Error(`Expected truthy, got ${JSON.stringify(val)}`);
+    },
+    toBeFalsy: () => {
+      if (val) throw new Error(`Expected falsy, got ${JSON.stringify(val)}`);
+    },
+  };
+}
+
+// ══════════════════════════════════════════════════════
+// DEFINICIÓN DE TESTS
+// ══════════════════════════════════════════════════════
+
+describe('getPrecio — precio por mes', () => {
+  it('Enero (0) → $10.000', () => expect(getPrecio(0)).toBe(10000));
+  it('Febrero (1) → $10.000', () => expect(getPrecio(1)).toBe(10000));
+  it('Marzo (2) → $10.000', () => expect(getPrecio(2)).toBe(10000));
+  it('Abril (3) → $15.000', () => expect(getPrecio(3)).toBe(15000));
+  it('Julio (6) → $15.000', () => expect(getPrecio(6)).toBe(15000));
+  it('Agosto (7) → $18.000', () => expect(getPrecio(7)).toBe(18000));
+  it('Diciembre (11) → $18.000', () => expect(getPrecio(11)).toBe(18000));
+});
+
+describe('calcMesTotal — cálculo de cuota', () => {
+  it('Regular 1 integrante Abril sin recargo', () => expect(calcMesTotal(3, 'regular', 1, 0)).toBe(15000));
+  it('Regular 1 integrante Abril con recargo', () => expect(calcMesTotal(3, 'regular', 1, 2000)).toBe(17000));
+  it('Familiar 2 integrantes Abril sin recargo', () => expect(calcMesTotal(3, 'familiar', 2, 0)).toBe(22500));
+  it('Familiar 2 integrantes Abril con recargo', () => expect(calcMesTotal(3, 'familiar', 2, 2000)).toBe(26500));
+  it('Familiar 3 integrantes Abril sin recargo', () => expect(calcMesTotal(3, 'familiar', 3, 0)).toBe(30000));
+  it('Regular 1 integrante Marzo sin recargo', () => expect(calcMesTotal(2, 'regular', 1, 0)).toBe(10000));
+});
+
+describe('normalizarDNI — limpieza de DNI', () => {
+  it('Quita puntos', () => expect(normalizarDNI('32.215.023')).toBe('32215023'));
+  it('Quita espacios', () => expect(normalizarDNI('32 215 023')).toBe('32215023'));
+  it('DNI limpio no cambia', () => expect(normalizarDNI('32215023')).toBe('32215023'));
+});
+
+describe('formatearDNIInput — formato visual', () => {
+  it('2 dígitos sin puntos', () => expect(formatearDNIInput('32')).toBe('32'));
+  it('5 dígitos con un punto', () => expect(formatearDNIInput('32215')).toBe('32.215'));
+  it('8 dígitos formato completo', () => expect(formatearDNIInput('32215023')).toBe('32.215.023'));
+  it('Ignora más de 8 dígitos', () => expect(formatearDNIInput('123456789')).toBe('12.345.678'));
+});
+
+describe('getMesesDeuda — cálculo de deuda', () => {
+  it('Inscripta en enero, no pagó nada, debe Feb+Mar+Abr (mesAct=3)', () => {
+    setupDB({
+      '11111111': [{ id: '11111111', nombre: 'Test', cat: '1ra', fechaInscripcion: '2026-01-20' }]
+    }, {});
+    expect(getMesesDeuda('11111111', 3)).toEqual([1, 2, 3]);
+  });
+
+  it('Inscripta en enero, pagó Feb y Mar, solo debe Abril', () => {
+    setupDB({
+      '11111111': [{ id: '11111111', nombre: 'Test', cat: '1ra', fechaInscripcion: '2026-01-20' }]
+    }, { '11111111': [{ m: 1 }, { m: 2 }] });
+    expect(getMesesDeuda('11111111', 3)).toEqual([3]);
+  });
+
+  it('Inscripta en enero, pagó todo hasta Abril, sin deuda', () => {
+    setupDB({
+      '11111111': [{ id: '11111111', nombre: 'Test', cat: '1ra', fechaInscripcion: '2026-01-20' }]
+    }, { '11111111': [{ m: 1 }, { m: 2 }, { m: 3 }] });
+    expect(getMesesDeuda('11111111', 3)).toHaveLength(0);
+  });
+
+  it('Inscripta el 11 de abril (tardía), sin deuda en Abril (mesAct=3)', () => {
+    setupDB({
+      '22222222': [{ id: '22222222', nombre: 'Tardía', cat: '6ta', fechaInscripcion: '2026-04-11' }]
+    }, {});
+    expect(getMesesDeuda('22222222', 3)).toHaveLength(0);
+  });
+
+  it('Inscripta el 9 de abril (temprana), debe Abril', () => {
+    setupDB({
+      '33333333': [{ id: '33333333', nombre: 'Temprana', cat: '6ta', fechaInscripcion: '2026-04-09' }]
+    }, {});
+    expect(getMesesDeuda('33333333', 3)).toEqual([3]);
+  });
+});
+
+describe('inscripcionTardia — después del día 10', () => {
+  it('Inscripta el día 11 → tardía', () => {
+    setupDB({ '11111111': [{ id: '11111111', fechaInscripcion: '2026-04-11' }] }, {});
+    expect(inscripcionTardia('11111111')).toBeTruthy();
+  });
+
+  it('Inscripta el día 10 → no tardía', () => {
+    setupDB({ '11111111': [{ id: '11111111', fechaInscripcion: '2026-04-10' }] }, {});
+    expect(inscripcionTardia('11111111')).toBeFalsy();
+  });
+
+  it('Inscripta el día 1 → no tardía', () => {
+    setupDB({ '11111111': [{ id: '11111111', fechaInscripcion: '2026-04-01' }] }, {});
+    expect(inscripcionTardia('11111111')).toBeFalsy();
+  });
+});
+
+describe('soloDebeInscripcion — caso Albano/Faundez', () => {
+  it('Inscripta el 11/04, sin pagos → solo debe inscripción', () => {
+    setupDB({
+      '49937817': [{ id: '49937817', nombre: 'Faundez', cat: '6ta', fechaInscripcion: '2026-04-11' }]
+    }, {}, {});
+    expect(soloDebeInscripcion('49937817', 3)).toBeTruthy();
+  });
+
+  it('Inscripta el 11/04, inscripción ya paga → no debe nada', () => {
+    setupDB({
+      '49937817': [{ id: '49937817', nombre: 'Faundez', cat: '6ta', fechaInscripcion: '2026-04-11' }]
+    }, {}, { '49937817': true });
+    expect(soloDebeInscripcion('49937817', 3)).toBeFalsy();
+  });
+
+  it('Inscripta el 9/04, tiene deuda de Abril → NO es solo inscripción', () => {
+    setupDB({
+      '41484213': [{ id: '41484213', nombre: 'Albano', cat: '1ra', fechaInscripcion: '2026-04-09' }]
+    }, {}, {});
+    expect(soloDebeInscripcion('41484213', 3)).toBeFalsy();
+  });
+});
+
+describe('esPrimerPago — primer pago del integrante', () => {
+  it('Sin pagos y con deuda → es primer pago', () => {
+    setupDB({
+      '11111111': [{ id: '11111111', fechaInscripcion: '2026-01-20' }]
+    }, {}, {});
+    expect(esPrimerPago('11111111', 3)).toBeTruthy();
+  });
+
+  it('Con pagos previos → no es primer pago', () => {
+    setupDB({
+      '11111111': [{ id: '11111111', fechaInscripcion: '2026-01-20' }]
+    }, { '11111111': [{ m: 1 }] }, {});
+    expect(esPrimerPago('11111111', 3)).toBeFalsy();
+  });
+
+  it('Sin pagos pero sin deuda (inscripta tarde) → no es primer pago', () => {
+    setupDB({
+      '49937817': [{ id: '49937817', fechaInscripcion: '2026-04-11' }]
+    }, {}, {});
+    expect(esPrimerPago('49937817', 3)).toBeFalsy();
+  });
+});
+
+describe('debeInscripcion — inscripción pendiente', () => {
+  it('Sin inscripción paga → debe', () => {
+    setupDB({}, {}, {});
+    expect(debeInscripcion('11111111')).toBeTruthy();
+  });
+
+  it('Con inscripción paga → no debe', () => {
+    setupDB({}, {}, { '11111111': true });
+    expect(debeInscripcion('11111111')).toBeFalsy();
+  });
+});
+
+// ══════════════════════════════════════════════════════
+// RUNNER
+// ══════════════════════════════════════════════════════
+
+async function runAll() {
+  const resultsEl = document.getElementById('results');
+  const summaryEl = document.getElementById('summary');
+  const progressEl = document.getElementById('progress');
+  const progressBar = document.getElementById('progress-bar');
+  resultsEl.innerHTML = '';
+  summaryEl.style.display = 'flex';
+  progressEl.style.display = 'block';
+
+  let passed = 0, failed = 0, total = 0;
+  const totalTests = suites.reduce((s, suite) => s + suite.tests.length, 0);
+
+  for (const suite of suites) {
+    const suiteEl = document.createElement('div');
+    suiteEl.className = 'suite';
+    suiteEl.innerHTML = `<div class="suite-title">${suite.name}</div>`;
+
+    for (const test of suite.tests) {
+      total++;
+      let status = 'pass', error = null;
+      try {
+        test.fn();
+        passed++;
+      } catch(e) {
+        status = 'fail';
+        error = e.message;
+        failed++;
+      }
+
+      const testEl = document.createElement('div');
+      testEl.className = 'test';
+      testEl.innerHTML = `
+        <div class="icon ${status}">${status === 'pass' ? '✓' : '✗'}</div>
+        <div>
+          <div class="test-name">${test.name}</div>
+          ${error ? `<div class="test-error">${error}</div>` : ''}
+        </div>`;
+      suiteEl.appendChild(testEl);
+
+      progressBar.style.width = (total / totalTests * 100) + '%';
+      document.getElementById('s-pass').textContent = passed;
+      document.getElementById('s-fail').textContent = failed;
+      document.getElementById('s-total').textContent = total;
+      await new Promise(r => setTimeout(r, 10));
+    }
+    resultsEl.appendChild(suiteEl);
+  }
+
+  progressBar.style.background = failed > 0 ? '#f87171' : '#4ade80';
+}
+</script>
+</body>
+</html>
