@@ -1384,16 +1384,16 @@ function iniciales(nombre) {
 }
 
 function renderGrupo() {
-  // En grupo familiar, todos tienen la misma deuda (unión) -> nunca mostramos "al día" individual
-  const esFamiliar = grupo.length > 1;
   document.getElementById('grupoList').innerHTML = grupo.map(p => {
-    const ini = iniciales(p.nombre);
+    const ini  = iniciales(p.nombre);
+    const jug  = JUGADORAS.find(x => x.dni === String(p.id));
+    const baja = jug?.estado === 'baja';
     return `
-      <div class="player-row selected" style="cursor:default">
-        <div class="check">✓</div>
-        <div class="avatar">${ini}</div>
+      <div class="player-row ${baja ? '' : 'selected'}" style="cursor:default;${baja ? 'opacity:0.45;' : ''}">
+        <div class="check">${baja ? '✗' : '✓'}</div>
+        <div class="avatar" style="${baja ? 'background:#999;' : ''}">${ini}</div>
         <div>
-          <div class="p-name">${p.nombre}</div>
+          <div class="p-name">${p.nombre}${baja ? ' <span style="font-size:10px;color:#999">(baja)</span>' : ''}</div>
           <div class="p-cat">Categoría ${p.cat}</div>
         </div>
       </div>`;
@@ -1444,9 +1444,16 @@ function recalc() {
     : 0;
 
   // En grupo mixto (algunos deben inscripción, otros no) siempre agregar inscripción
-  const hayInscPendiente = [...selIds].some(id => debeInscripcion(id));
+  const hayInscPendiente = [...selIds].some(id => {
+    const j = JUGADORAS.find(x => x.dni === String(id));
+    if (j && j.estado === 'baja') return false; // no cobrar inscripción a dados de baja
+    return debeInscripcion(id);
+  });
   const inscTotalFinal = hayInscPendiente
-    ? INSCRIPCION * [...selIds].filter(id => debeInscripcion(id)).length
+    ? INSCRIPCION * [...selIds].filter(id => {
+        const j = JUGADORAS.find(x => x.dni === String(id));
+        return (!j || j.estado !== 'baja') && debeInscripcion(id);
+      }).length
     : 0;
 
   let grandTotal = 0;
