@@ -1418,6 +1418,8 @@ function renderGrupo() {
       </div>`;
   }).join('');
 }
+
+function toggle(id) {
   selIds.has(id) ? selIds.delete(id) : selIds.add(id);
   renderGrupo(); recalc();
 }
