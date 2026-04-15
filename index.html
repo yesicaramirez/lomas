@@ -767,6 +767,7 @@
       <table>
         <thead><tr>
           <th>Nombre completo</th>
+          <th>DNI</th>
           <th>Categoría</th>
           <th style="white-space:nowrap">Inscripción</th>
           <th style="white-space:nowrap">Activación</th>
@@ -2354,6 +2355,7 @@ function renderIntegrantesTable() {
     : filtered.map(j => `
       <tr>
         <td><strong>${j.nombre}</strong></td>
+        <td style="font-size:12px;color:var(--text-soft);white-space:nowrap">${j.dni}</td>
         <td><span class="badge" style="background:var(--pink-soft);color:var(--pink-dark);white-space:nowrap">${j.cat}</span></td>
         <td style="white-space:nowrap;font-size:12px">${formatFecha(j.fechaInscripcion)}</td>
         <td style="white-space:nowrap;font-size:12px">${j.fechaActivacion ? formatFecha(j.fechaActivacion) : '-'}</td>
