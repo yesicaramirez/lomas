@@ -1119,10 +1119,7 @@ function getMesesDeuda(pid) {
 
 // ¿Todavía no pagó la inscripción?
 function debeInscripcion(pid) {
-  const key = String(pid);
-  const result = !window.PAGADOS_INSCRIPCION?.[key];
-  if (key === '53571744' || key === '52353292') console.log('debeInscripcion:', key, '→', result, '| PAGADOS_INSCRIPCION keys:', Object.keys(window.PAGADOS_INSCRIPCION || {}));
-  return result;
+  return !window.PAGADOS_INSCRIPCION?.[String(pid)];
 }
 
 // ¿Se inscribió después del día 10? (inscripción tardía)
@@ -1194,7 +1191,7 @@ function normalizarDNI(raw) {
   return raw.replace(/\D/g, '');
 }
 
-function buscar() {
+async function buscar() {
   const raw = document.getElementById('dniInput').value.trim();
   const q   = normalizarDNI(raw);
   const err = document.getElementById('dniError');
@@ -1207,6 +1204,9 @@ function buscar() {
     err.style.display = 'block';
     return;
   }
+
+  // Refrescar datos del Sheet silenciosamente antes de mostrar resultados
+  await cargarDatos(true);
 
   // Verificar si es exento ANTES de buscar en DB
   const jugadoraExenta = JUGADORAS.find(j => j.dni === q && j.exento);
@@ -1575,13 +1575,15 @@ function setLoading(visible) {
   document.getElementById('loadingScreen').style.display = visible ? 'flex' : 'none';
 }
 
-async function cargarDatos() {
-  setLoading(true);
+async function cargarDatos(silent = false) {
+  if (!silent) setLoading(true);
 
   // Timeout de seguridad — si tarda más de 15s mostrar error
   const timeout = setTimeout(() => {
-    setLoading(false);
-    document.getElementById('loadingError').style.display = 'block';
+    if (!silent) {
+      setLoading(false);
+      document.getElementById('loadingError').style.display = 'block';
+    }
   }, 15000);
   try {
     const res  = await fetch(APPS_SCRIPT_URL + '?action=datos&t=' + Date.now());
@@ -1706,10 +1708,10 @@ async function cargarDatos() {
 
   } catch(err) {
     console.error('Error cargando datos:', err);
-    document.getElementById('loadingError').style.display = 'block';
+    if (!silent) document.getElementById('loadingError').style.display = 'block';
   } finally {
     clearTimeout(timeout);
-    setLoading(false);
+    if (!silent) setLoading(false);
   }
 }
 
@@ -2221,12 +2223,17 @@ cargarDatos();
 })();
 
 // -- ADMIN INNER TABS --
-function switchAdminTab(tab) {
+async function switchAdminTab(tab) {
   document.getElementById('admin-pagos-section').style.display    = tab === 'pagos'         ? 'block' : 'none';
   document.getElementById('admin-jugadoras').style.display        = tab === 'jugadoras'     ? 'block' : 'none';
   document.getElementById('admin-liquidaciones').style.display    = tab === 'liquidaciones' ? 'block' : 'none';
   document.querySelectorAll('.admin-tab').forEach(el => el.classList.remove('active'));
   document.getElementById('atab-' + tab).classList.add('active');
+
+  // Refrescar datos del Sheet silenciosamente al cambiar de tab
+  await cargarDatos(true);
+
+  if (tab === 'pagos')         renderAdminTable();
   if (tab === 'jugadoras')     { renderIntegrantesTable(); renderCrecimiento(); }
   if (tab === 'liquidaciones') renderLiquidaciones();
 }
