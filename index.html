@@ -641,6 +641,10 @@
       <button class="admin-tab" id="atab-jugadoras" onclick="switchAdminTab('jugadoras')">👥 Integrantes</button>
       <button class="admin-tab" id="atab-liquidaciones" onclick="switchAdminTab('liquidaciones')">📊 Liquidaciones</button>
     </div>
+    <div id="adminLoadingBar" style="display:none;align-items:center;gap:8px;padding:8px 12px;margin-bottom:12px;background:var(--pink-bg);border-radius:8px;font-size:12px;color:var(--pink-dark)">
+      <span class="spinner" style="border-color:rgba(196,117,143,0.3);border-top-color:var(--pink-dark);width:12px;height:12px"></span>
+      Actualizando datos...
+    </div>
     <div id="admin-pagos-section">
     <!-- Resumen compacto -->
     <div style="margin-bottom:16px">
@@ -2252,15 +2256,11 @@ async function switchAdminTab(tab) {
   document.querySelectorAll('.admin-tab').forEach(el => el.classList.remove('active'));
   document.getElementById('atab-' + tab).classList.add('active');
 
-  // Refrescar datos del Sheet silenciosamente al cambiar de tab
-  const tabContent = document.getElementById(
-    tab === 'pagos' ? 'admin-pagos-section' : tab === 'jugadoras' ? 'admin-jugadoras' : 'admin-liquidaciones'
-  );
-  tabContent.style.opacity = '0.5';
-  tabContent.style.pointerEvents = 'none';
+  // Mostrar barra de carga debajo de los tabs
+  const loadingBar = document.getElementById('adminLoadingBar');
+  loadingBar.style.display = 'flex';
   await cargarDatos(true);
-  tabContent.style.opacity = '1';
-  tabContent.style.pointerEvents = '';
+  loadingBar.style.display = 'none';
 
   if (tab === 'pagos')         renderAdminTable();
   if (tab === 'jugadoras')     { renderIntegrantesTable(); renderCrecimiento(); }
