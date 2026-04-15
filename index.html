@@ -1434,27 +1434,26 @@ function recalc() {
 
   const recargo = hayRec && !soloInscripcion ? RECARGO : 0;
 
-  // ¿Algún integrante debe inscripción + cuota?
-  const primerPago = [...selIds].some(id => esPrimerPago(id));
-  // ¿Algún integrante debe inscripción pendiente (tardía, ahora paga cuota)?
-  const inscPendiente = !soloInscripcion && [...selIds].some(id => debeInscripcion(id) && inscripcionTardia(id));
-
-  const inscTotal = (primerPago || soloInscripcion || inscPendiente)
-    ? INSCRIPCION * [...selIds].filter(id => debeInscripcion(id)).length
-    : 0;
-
-  // En grupo mixto (algunos deben inscripción, otros no) siempre agregar inscripción
-  const hayInscPendiente = [...selIds].some(id => {
+  // ¿Algún integrante activo debe inscripción + cuota?
+  const primerPago = [...selIds].some(id => {
     const j = JUGADORAS.find(x => x.dni === String(id));
-    if (j && j.estado === 'baja') return false; // no cobrar inscripción a dados de baja
-    return debeInscripcion(id);
+    if (j && j.estado === 'baja') return false;
+    return esPrimerPago(id);
   });
-  const inscTotalFinal = hayInscPendiente
-    ? INSCRIPCION * [...selIds].filter(id => {
-        const j = JUGADORAS.find(x => x.dni === String(id));
-        return (!j || j.estado !== 'baja') && debeInscripcion(id);
-      }).length
-    : 0;
+  // ¿Algún integrante activo debe inscripción pendiente tardía?
+  const inscPendiente = !soloInscripcion && [...selIds].some(id => {
+    const j = JUGADORAS.find(x => x.dni === String(id));
+    if (j && j.estado === 'baja') return false;
+    return debeInscripcion(id) && inscripcionTardia(id);
+  });
+
+  // Integrantes activos que deben inscripción
+  const activosConInscr = [...selIds].filter(id => {
+    const j = JUGADORAS.find(x => x.dni === String(id));
+    return (!j || j.estado !== 'baja') && debeInscripcion(id);
+  });
+  const hayInscPendiente = activosConInscr.length > 0;
+  const inscTotalFinal   = hayInscPendiente ? INSCRIPCION * activosConInscr.length : 0;
 
   let grandTotal = 0;
   let lines = '';
@@ -1465,11 +1464,11 @@ function recalc() {
     lines += `
       <div class="total-line" style="margin-bottom:3px">
         <span class="tl-label" style="font-weight:700;color:var(--pink-dark)">Inscripción</span>
-        <span class="tl-val" style="color:var(--text-soft);font-size:11px">$${inscTotal.toLocaleString('es-AR')}</span>
+        <span class="tl-val" style="color:var(--text-soft);font-size:11px">$${inscTotalFinal.toLocaleString('es-AR')}</span>
       </div>
       <div class="total-line">
         <span class="tl-label">$${INSCRIPCION.toLocaleString('es-AR')}</span>
-        <span class="tl-val">$${inscTotal.toLocaleString('es-AR')}</span>
+        <span class="tl-val">$${inscTotalFinal.toLocaleString('es-AR')}</span>
       </div>`;
 
     document.getElementById('totalBox').style.display = 'block';
@@ -1491,7 +1490,7 @@ function recalc() {
       </div>
       <div class="total-line">
         <span class="tl-label">$${INSCRIPCION.toLocaleString('es-AR')}${nPrimeras > 1 ? ' × '+nPrimeras : ''}</span>
-        <span class="tl-val">$${inscTotal.toLocaleString('es-AR')}</span>
+        <span class="tl-val">$${inscTotalFinal.toLocaleString('es-AR')}</span>
       </div>
       <div class="tl-sep" style="margin:6px 0 4px"></div>`;
   }
@@ -1674,17 +1673,30 @@ async function cargarDatos() {
     });
 
     // ── Construir JUGADORAS para el panel admin ──
-    JUGADORAS = jugadores.map(j => ({
-      nombre:           j['Apellido'] + ', ' + j['Nombre'],
-      cat:              j['Categoria'],
-      dni:              j['DNI'],
-      tel:              j['Telefono'] || '',
-      fechaInscripcion: j['Fecha inscripcion'] || '',
-      fechaActivacion:  j['Fecha inscripcion'] || '',
-      fechaBaja:        j['Fecha baja'] || '',
-      estado:           String(j['Exento']).toUpperCase() === 'TRUE' ? 'exenta' : (j['Estado'] || 'activa'),
-      exento:           String(j['Exento']).toUpperCase() === 'TRUE',
-    }));
+    JUGADORAS = jugadores.map(j => {
+      // Normalizar fechaBaja — puede venir como string ISO, fecha larga, o vacío
+      let fechaBaja = '';
+      const rawBaja = j['Fecha baja'] || '';
+      if (rawBaja) {
+        const d = new Date(rawBaja);
+        if (!isNaN(d)) {
+          fechaBaja = d.toISOString().split('T')[0]; // siempre YYYY-MM-DD
+        } else if (/^\d{4}-\d{2}-\d{2}$/.test(rawBaja)) {
+          fechaBaja = rawBaja;
+        }
+      }
+      return {
+        nombre:           j['Apellido'] + ', ' + j['Nombre'],
+        cat:              j['Categoria'],
+        dni:              j['DNI'],
+        tel:              j['Telefono'] || '',
+        fechaInscripcion: j['Fecha inscripcion'] || '',
+        fechaActivacion:  j['Fecha inscripcion'] || '',
+        fechaBaja,
+        estado:           String(j['Exento']).toUpperCase() === 'TRUE' ? 'exenta' : (j['Estado'] || 'activa'),
+        exento:           String(j['Exento']).toUpperCase() === 'TRUE',
+      };
+    });
 
     _datosListos = true;
     console.log(`Datos cargados: ${jugadores.length} jugadores, ${pagos.length} pagos, ${grupos.length} grupos`);
