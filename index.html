@@ -515,7 +515,7 @@
         <div class="search-row">
           <input class="input-field search-input" id="dniInput" type="text" placeholder="DNI"
             maxlength="12" onkeydown="if(event.key==='Enter')buscar()" oninput="formatearDNIInput(this)">
-          <button class="btn-search" onclick="buscar()">Buscar</button>
+          <button class="btn-search" id="btnBuscar" onclick="buscar()">Buscar</button>
         </div>
         <div class="error-msg" id="dniError">No encontramos ese DNI. Consultá al club.</div>
       </div>
@@ -552,7 +552,7 @@
         <!-- Meses adeudados -->
         <div class="cuota-block" id="payOpts" style="display:none">
           <div id="mesesCard">
-            <div class="cuota-heading"><div class="card-heading-dot"></div>Mes a pagar <span style="font-size:11px;font-weight:400;color:var(--text-soft);margin-left:4px">— tocá para deseleccionar</span></div>
+            <div class="cuota-heading"><div class="card-heading-dot"></div>Mes a pagar</div>
             <div id="mesesList" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:4px"></div>
           </div>
           <div class="recargo-note" id="recargoNote" style="display:none">
@@ -1206,7 +1206,15 @@ async function buscar() {
   }
 
   // Refrescar datos del Sheet silenciosamente antes de mostrar resultados
+  const btnBuscar = document.getElementById('btnBuscar');
+  const dniInput = document.getElementById('dniInput');
+  btnBuscar.textContent = '...';
+  btnBuscar.disabled = true;
+  dniInput.disabled = true;
   await cargarDatos(true);
+  btnBuscar.textContent = 'Buscar';
+  btnBuscar.disabled = false;
+  dniInput.disabled = false;
 
   // Verificar si es exento ANTES de buscar en DB
   const jugadoraExenta = JUGADORAS.find(j => j.dni === q && j.exento);
@@ -1387,7 +1395,15 @@ function iniciales(nombre) {
 }
 
 function renderGrupo() {
-  document.getElementById('grupoList').innerHTML = grupo.map(p => {
+  // Activos primero, dados de baja después
+  const sorted = [...grupo].sort((a, b) => {
+    const ja = JUGADORAS.find(x => x.dni === String(a.id));
+    const jb = JUGADORAS.find(x => x.dni === String(b.id));
+    const bajaA = ja?.estado === 'baja' ? 1 : 0;
+    const bajaB = jb?.estado === 'baja' ? 1 : 0;
+    return bajaA - bajaB;
+  });
+  document.getElementById('grupoList').innerHTML = sorted.map(p => {
     const ini  = iniciales(p.nombre);
     const jug  = JUGADORAS.find(x => x.dni === String(p.id));
     const baja = jug?.estado === 'baja';
@@ -1402,8 +1418,6 @@ function renderGrupo() {
       </div>`;
   }).join('');
 }
-
-function toggle(id) {
   selIds.has(id) ? selIds.delete(id) : selIds.add(id);
   renderGrupo(); recalc();
 }
@@ -2231,7 +2245,12 @@ async function switchAdminTab(tab) {
   document.getElementById('atab-' + tab).classList.add('active');
 
   // Refrescar datos del Sheet silenciosamente al cambiar de tab
+  const tabContent = document.getElementById(
+    tab === 'pagos' ? 'admin-pagos-section' : tab === 'jugadoras' ? 'admin-jugadoras' : 'admin-liquidaciones'
+  );
+  tabContent.style.opacity = '0.4';
   await cargarDatos(true);
+  tabContent.style.opacity = '1';
 
   if (tab === 'pagos')         renderAdminTable();
   if (tab === 'jugadoras')     { renderIntegrantesTable(); renderCrecimiento(); }
