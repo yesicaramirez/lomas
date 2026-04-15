@@ -1085,9 +1085,10 @@ function getMesesDeuda(pid) {
   const pidStr  = String(pid);
   const pagados = PAGADOS[pidStr] || [];
   const integrante = Object.values(DB).flat().find(p => String(p.id) === pidStr);
+  const jugadora   = JUGADORAS.find(j => j.dni === pidStr);
+
   let desde = 0;
   if (integrante?.fechaInscripcion) {
-    // Parsear como fecha local para evitar desfase UTC
     const parts = integrante.fechaInscripcion.split('-');
     const d = parts.length === 3
       ? new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]))
@@ -1096,11 +1097,23 @@ function getMesesDeuda(pid) {
       desde = d.getDate() <= 10 ? d.getMonth() : d.getMonth() + 1;
     }
   }
+
+  // Si está dada de baja, no cobrar meses posteriores a la baja
+  let hasta = MES_ACT;
+  if (jugadora?.estado === 'baja' && jugadora?.fechaBaja) {
+    const parts = jugadora.fechaBaja.split('-');
+    if (parts.length === 3) {
+      const dBaja = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+      if (!isNaN(dBaja)) {
+        hasta = Math.min(MES_ACT, dBaja.getMonth() - 1); // no cobrar el mes de baja en adelante
+      }
+    }
+  }
+
   const deuda = [];
-  for (let i = desde; i <= MES_ACT; i++) {
+  for (let i = desde; i <= hasta; i++) {
     if (!pagados.some(p => p.m === i)) deuda.push(i);
   }
-  console.log('getMesesDeuda:', { pid: pidStr, fechaInscripcion: integrante?.fechaInscripcion, desde, MES_ACT, deuda });
   return deuda;
 }
 
@@ -1217,13 +1230,18 @@ function buscar() {
   try { localStorage.setItem('lomas_dni', q); } catch(e) {}
 
   grupo = g;
-  tipoAuto = grupo.length > 1 ? 'familiar' : 'regular';
+  // Solo contar activos para determinar tipo de grupo
+  const grupoActivos = grupo.filter(p => {
+    const j = JUGADORAS.find(x => x.dni === String(p.id));
+    return !j || j.estado !== 'baja';
+  });
+  tipoAuto = grupoActivos.length > 1 ? 'familiar' : 'regular';
 
   // Título: género según nombre (heurística simple por terminación)
   document.getElementById('grupoTitulo').textContent =
     grupo.length > 1 ? 'Grupo familiar' : 'Integrante';
 
-  selIds = new Set(grupo.map(p => p.id));
+  selIds = new Set(grupoActivos.map(p => p.id));
 
   // Meses adeudados del grupo (unión)
   const todosMeses = new Set();
@@ -1656,7 +1674,7 @@ async function cargarDatos() {
       tel:              j['Telefono'] || '',
       fechaInscripcion: j['Fecha inscripcion'] || '',
       fechaActivacion:  j['Fecha inscripcion'] || '',
-      fechaBaja:        '',
+      fechaBaja:        j['Fecha baja'] || '',
       estado:           String(j['Exento']).toUpperCase() === 'TRUE' ? 'exenta' : (j['Estado'] || 'activa'),
       exento:           String(j['Exento']).toUpperCase() === 'TRUE',
     }));
