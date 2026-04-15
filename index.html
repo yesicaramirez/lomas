@@ -1063,29 +1063,41 @@ function getPrecio(mes) {
 
 
 
-// DNIs con período de gracia extendido (30 días) — pagan después en el mes
+// DNIs con período de gracia extendido — pagan después en el mes
 const GRACIA_EXTENDIDA = new Set([
   '30461329', // Casco, Gabriela (+ grupo G01)
   '37723882', // González, Johana (+ grupo G04)
   '27369248', // Portela, Melisa (+ grupo G09)
   '36046348', // Cornejo, Giuliana (+ grupo G02)
+  '55843978', // Giménez Blanco — 90 días
+  '56089911', // Blanco, Alison Yareli — 90 días
 ]);
+
+// Días de gracia por DNI (default 30, puede ser más)
+const GRACIA_DIAS = {
+  '55843978': 90,
+  '56089911': 90,
+};
 
 function tieneRecargo() {
   if (HOY_DIA <= CONFIG.DIA_LIMITE) return false;
-  // Verificar si algún integrante seleccionado tiene gracia extendida
   if (typeof selIds !== 'undefined' && selIds.size > 0) {
     const todosConGracia = [...selIds].every(id => {
-      // Buscar si este DNI o alguno de su grupo tiene gracia extendida
-      const integrante = Object.values(DB).flat().find(p => String(p.id) === String(id));
-      if (!integrante) return false;
-      // Buscar grupo del integrante
       const grupoArr = DB[id] || [];
       return grupoArr.some(p => GRACIA_EXTENDIDA.has(String(p.id))) || GRACIA_EXTENDIDA.has(String(id));
     });
-    if (todosConGracia) return HOY_DIA > 30; // 30 días de gracia
+    if (todosConGracia) {
+      // Obtener días de gracia del grupo (máximo)
+      const diasGracia = [...selIds].reduce((max, id) => {
+        const grupoArr = DB[id] || [];
+        const dniConGracia = grupoArr.find(p => GRACIA_EXTENDIDA.has(String(p.id)));
+        const dni = dniConGracia ? String(dniConGracia.id) : String(id);
+        return Math.max(max, GRACIA_DIAS[dni] || 30);
+      }, 30);
+      return HOY_DIA > diasGracia;
+    }
   }
-  return true; // día 10 ya pasó, aplica recargo normal
+  return true;
 }
 
 // Meses que debe el integrante = desde su mes de inscripción hasta MES_ACT, no pagados
@@ -1920,9 +1932,10 @@ function renderAdminTable() {
                   p['Origen'] === 'mercadopago'
                 ).reduce((s,p) => s + (parseInt(p['Monto'])||0), 0);
   const porCobrar   = filtered.filter(r => r.status === 'pending').reduce((s,r) => s + r.amount, 0);
-  const pagadasN    = filtered.filter(r => r.status === 'paid').length;
+  const pagadasN    = filtered.filter(r => r.status === 'paid' || r.status === 'bonificado').length;
   const pendientesN = filtered.filter(r => r.status === 'pending').length;
-  const totalN      = pagadasN + pendientesN;
+  // Total real = activos no exentos
+  const totalN = JUGADORAS.filter(j => j.estado === 'activa').length;
   const pctPag      = totalN > 0 ? Math.round(pagadasN    / totalN * 100) : 0;
   const pctPend     = totalN > 0 ? Math.round(pendientesN / totalN * 100) : 0;
 
