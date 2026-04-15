@@ -247,6 +247,10 @@
   }
   .btn-primary:hover { background: var(--pink-dark); transform: translateY(-1px); box-shadow: 0 6px 18px rgba(160,80,110,0.25); }
   .btn-primary:disabled { opacity: 0.3; cursor: not-allowed; transform: none; box-shadow: none; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.4); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
+  .tab-loading { position: relative; pointer-events: none; }
+  .tab-loading::after { content: ''; position: absolute; inset: 0; background: rgba(255,255,255,0.6); border-radius: inherit; display: flex; align-items: center; justify-content: center; }
   .btn-ghost {
     background: transparent; border: 1px solid var(--border); color: var(--text-soft);
     border-radius: 9px; padding: 10px 20px; font-family: 'Inter', sans-serif;
@@ -1208,11 +1212,11 @@ async function buscar() {
   // Refrescar datos del Sheet silenciosamente antes de mostrar resultados
   const btnBuscar = document.getElementById('btnBuscar');
   const dniInput = document.getElementById('dniInput');
-  btnBuscar.textContent = '...';
+  btnBuscar.innerHTML = '<span class="spinner"></span>';
   btnBuscar.disabled = true;
   dniInput.disabled = true;
   await cargarDatos(true);
-  btnBuscar.textContent = 'Buscar';
+  btnBuscar.innerHTML = 'Buscar';
   btnBuscar.disabled = false;
   dniInput.disabled = false;
 
@@ -1775,8 +1779,10 @@ async function pagar() {
   // Mostrar loading en el botón
   const btn = document.getElementById('btnPagar');
   const original = btn.innerHTML;
+  const originalWidth = btn.offsetWidth;
+  btn.style.minWidth = originalWidth + 'px';
   btn.disabled = true;
-  btn.innerHTML = 'Procesando...';
+  btn.innerHTML = '<span class="spinner"></span>';
 
   try {
     const payload = {
@@ -2250,9 +2256,11 @@ async function switchAdminTab(tab) {
   const tabContent = document.getElementById(
     tab === 'pagos' ? 'admin-pagos-section' : tab === 'jugadoras' ? 'admin-jugadoras' : 'admin-liquidaciones'
   );
-  tabContent.style.opacity = '0.4';
+  tabContent.style.opacity = '0.5';
+  tabContent.style.pointerEvents = 'none';
   await cargarDatos(true);
   tabContent.style.opacity = '1';
+  tabContent.style.pointerEvents = '';
 
   if (tab === 'pagos')         renderAdminTable();
   if (tab === 'jugadoras')     { renderIntegrantesTable(); renderCrecimiento(); }
