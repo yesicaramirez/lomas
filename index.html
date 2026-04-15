@@ -1793,7 +1793,12 @@ let ADMIN_DATA = [];
 function buildAdminData() {
   if (!window._pagosSheet) return;
   ADMIN_DATA = window._pagosSheet
-    .filter(p => p['Mes'] !== 'Inscripcion') // inscripciones se muestran en Otros Ingresos
+    .filter(p => {
+      if (p['Mes'] === 'Inscripcion') return false; // inscripciones van a Otros Ingresos
+      // Solo incluir integrantes activos
+      const j = JUGADORAS.find(x => x.dni === String(p['DNI']));
+      return !j || j.estado === 'activa' || j.estado === 'exenta';
+    })
     .map(p => {
     const mesNombre = String(p['Mes'] || '').trim();
     // Obtener año desde cualquier key disponible, fallback al año actual
@@ -1975,6 +1980,13 @@ async function confirmarBaja() {
     j.fechaBaja = hoy;
 
     cerrarModal('modalBaja');
+
+    // Resetear botón para próxima baja
+    btn.disabled = false;
+    btn.textContent = 'Dar de baja';
+
+    // Recargar datos del Sheet para reflejar cambios reales
+    await cargarDatos();
     renderIntegrantesTable();
     renderCrecimiento();
 
