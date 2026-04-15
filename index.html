@@ -1119,7 +1119,10 @@ function getMesesDeuda(pid) {
 
 // ¿Todavía no pagó la inscripción?
 function debeInscripcion(pid) {
-  return !window.PAGADOS_INSCRIPCION?.[String(pid)];
+  const key = String(pid);
+  const result = !window.PAGADOS_INSCRIPCION?.[key];
+  if (key === '53571744' || key === '52353292') console.log('debeInscripcion:', key, '→', result, '| PAGADOS_INSCRIPCION keys:', Object.keys(window.PAGADOS_INSCRIPCION || {}));
+  return result;
 }
 
 // ¿Se inscribió después del día 10? (inscripción tardía)
